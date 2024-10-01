@@ -7,7 +7,6 @@ const port = 3000;
 
 app.use(bodyParser.json());
 
-/
 const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
@@ -39,4 +38,7 @@ app.post('/login', (req, res) => {
     });
 });
 
-
+// Thêm đoạn này để lắng nghe server
+app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+});

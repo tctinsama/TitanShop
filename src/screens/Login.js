@@ -21,7 +21,13 @@ const Login = ({ navigation }) => {
                 if (user.rolename === 'admin') {
                     navigation.navigate('AdHome');
                 } else {
-                    navigation.navigate('Home');
+                    navigation.navigate('HomeScreen', {
+                        screen: 'HomeToDetails',
+                        params: {
+                          screen: 'HomeScreen'
+                        }
+                      });
+                      
                 }
             } else {
                 Alert.alert('Error', user.message);

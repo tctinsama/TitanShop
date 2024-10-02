@@ -1,3 +1,4 @@
+//src/screens/customer/ProductDetailScreen.js
 import React, { useContext } from "react";
 import {
   View,
@@ -12,8 +13,8 @@ import { Button } from "@rneui/base";
 import { ArrowLeftIcon } from "react-native-heroicons/outline";
 import { Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { ProductsContext } from "../data/ProductsContext";
-import { CartContext } from "../data/CartContext";
+import { ProductsContext } from "../../data/ProductsContext";
+import { CartContext } from "../../data/CartContext";
 
 const ProductDetailScreen = ({ route }) => {
   const { productId } = route.params;

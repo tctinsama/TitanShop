@@ -1,4 +1,4 @@
-// MainTabNavigation.js
+// src/navigation/MainTabNavigation.js
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -8,9 +8,9 @@ import {
   ShoppingBagIcon,
 } from "react-native-heroicons/outline";
 import HomeScreen from "../screens/customer/HomeScreen";
-import SearchScreen from "../screens/SearchScreen";
-import CartScreen from "../screens/CartScreen";
-import ProductDetailScreen from "../screens/ProductDetailScreen";
+import SearchScreen from "../screens/customer/SearchScreen";
+import CartScreen from "../screens/customer/CartScreen";
+import ProductDetailScreen from "../screens/customer/ProductDetailScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();

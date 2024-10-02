@@ -1,3 +1,4 @@
+//src/components/SearchBox.js
 import { StyleSheet, Text, View, TextInput } from "react-native";
 import { MagnifyingGlassIcon } from "react-native-heroicons/outline";
 import React from "react";

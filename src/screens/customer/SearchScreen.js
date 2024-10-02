@@ -1,10 +1,11 @@
+// src/screens/customer/SearchScreen.js
 import { StyleSheet, Text, View, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useContext, useState } from "react";
-import SearchBox from "../components/SearchBox";
+import SearchBox from "../../components/SearchBox";
 import { StatusBar } from "expo-status-bar";
-import { ProductsContext } from "../data/ProductsContext";
-import CartProduct from "../components/CartProduct";
+import { ProductsContext } from "../../data/ProductsContext";
+import CartProduct from "../../components/CartProduct";
 import { useNavigation } from "@react-navigation/native";
 
 const SearchScreen = () => {

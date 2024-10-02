@@ -1,3 +1,4 @@
+//src/components/CartProduct.js
 import { StyleSheet, Text, View, Image, Pressable } from "react-native";
 import React from "react";
 import { Divider } from "@rneui/themed";

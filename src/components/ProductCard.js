@@ -1,3 +1,4 @@
+//src/components/ProductCard.js
 import {
   StyleSheet,
   Text,
@@ -86,3 +87,42 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
 });
+
+//// src/components/ProductCard.js
+//import React from "react";
+//import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+//
+//const ProductCard = ({ onTap, title, image, price }) => {
+//  return (
+//    <TouchableOpacity onPress={onTap} style={styles.card}>
+//      <Image source={image} style={styles.image} />
+//      <Text style={styles.title}>{title}</Text>
+//      <Text style={styles.price}>${price}</Text>
+//    </TouchableOpacity>
+//  );
+//};
+//
+//const styles = StyleSheet.create({
+//  card: {
+//    margin: 10,
+//    width: 150,
+//    alignItems: "center",
+//  },
+//  image: {
+//    width: "100%",
+//    height: 100,
+//    resizeMode: "contain",
+//  },
+//  title: {
+//    fontSize: 16,
+//    fontWeight: "bold",
+//    textAlign: "center",
+//  },
+//  price: {
+//    fontSize: 14,
+//    color: "#888",
+//  },
+//});
+
+//export default ProductCard;
+

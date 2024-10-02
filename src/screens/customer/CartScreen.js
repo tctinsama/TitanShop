@@ -1,8 +1,9 @@
+//src/screens/customer/CartScreen.js
 import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
 import React, { useContext } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import CartProduct from "../components/CartProduct";
-import { CartContext } from "../data/CartContext";
+import CartProduct from "../../components/CartProduct";
+import { CartContext } from "../../data/CartContext";
 import { StatusBar } from "expo-status-bar";
 import { Button } from "@rneui/themed";
 

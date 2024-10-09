@@ -1,6 +1,9 @@
-import React from "react";
+//src/screens/customer/HomeScreen.js
+import * as React from 'react';
 import { SafeAreaView, View, ScrollView, Text, Image, ImageBackground, StyleSheet } from "react-native";
 import ProductList from "../../components/ProductList";
+import { NavigationContainer } from '@react-navigation/native';
+
 
 const HomeScreen = (props) => {
     return (

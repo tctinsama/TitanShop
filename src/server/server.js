@@ -57,8 +57,31 @@ app.get('/products', (req, res) => {
             };
         });
 
-        console.log('Cleaned product data:', cleanedResults); // Log để kiểm tra dữ liệu đã chuyển đổi
+        // console.log('Cleaned product data:', cleanedResults); // Log để kiểm tra dữ liệu đã chuyển đổi
         res.json(cleanedResults); // Trả về danh sách sản phẩm
+    });
+});
+
+// API tải danh mục
+app.get('/categories', (req, res) => {
+    const query = 'SELECT categoryproductid, categoryname, categorydes, categoryImage FROM category WHERE status = 1';
+
+    connection.query(query, (error, results) => {
+        if (error) {
+            console.error('Database error:', error);
+            return res.status(500).json({ message: 'Có lỗi xảy ra khi tải danh mục', success: false });
+        }
+
+        // Chuyển đổi hình ảnh từ Buffer sang base64
+        const cleanedResults = results.map(category => {
+            return {
+                ...category,
+                categoryImage: category.categoryImage ? category.categoryImage.toString('base64') : null
+            };
+        });
+
+        // console.log('Cleaned category data:', cleanedResults);
+        res.json(cleanedResults); // Trả về danh sách danh mục
     });
 });
 

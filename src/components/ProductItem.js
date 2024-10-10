@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Dimensions, StyleSheet, Image } from 'react-native';
 
 const ProductItem = ({ product }) => {
-    console.log('Product image data:', product.image);
+    // console.log('Product image data:', product.image);
 
     // Kiểm tra nếu product.image tồn tại và không rỗng
     const hasImage = product.image && product.image.length > 0;
@@ -15,7 +15,7 @@ const ProductItem = ({ product }) => {
         ? product.image // Nếu đã có prefix, sử dụng trực tiếp
         : 'https://example.com/default-image.png'; // Hình ảnh mặc định nếu không có
 
-    console.log('Image URL:', imageUrl); // In ra URL hình ảnh để kiểm tra
+    // console.log('Image URL:', imageUrl); // In ra URL hình ảnh để kiểm tra
 
     return (
         <View style={styles.container}>

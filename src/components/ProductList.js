@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, ActivityIndicator, View, Text } from 'react-native';
+import { ScrollView, ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 import axios from 'axios';
 import ProductItem from './ProductItem';
 
@@ -12,35 +12,19 @@ const ProductList = () => {
     const fetchProducts = async () => {
       try {
         const response = await axios.get('http://10.0.2.2:3000/products');
-        
-        // Kiểm tra dữ liệu
-        if (Array.isArray(response.data)) {
-          // Chỉ lấy những thuộc tính cần thiết
-          const filteredProducts = response.data.map(product => ({
-            id: product.productid,
-            name: product.name || "No name available",
-            productdes: product.productdes || "No description available",
-            image: product.image ? `data:image/png;base64,${product.image}` : 'https://i.imgur.com/1tMFzp8.png', // Hình ảnh mặc định
-            price: product.price != null ? product.price : 0, // Giá mặc định
-          }));
-          setProducts(filteredProducts);
-        } else {
-          setError('Dữ liệu không hợp lệ.');
-        }
+        setProducts(response.data);
       } catch (error) {
-        setError(error.response ? error.response.data : error.message);
-        console.error('Error fetching products:', error);
+        setError(error.message);
       } finally {
         setLoading(false);
       }
     };
-
     fetchProducts();
   }, []);
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0000ff" />
       </View>
     );
@@ -48,24 +32,62 @@ const ProductList = () => {
 
   if (error) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: 'red' }}>{error}</Text>
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
+  // Chia sản phẩm thành từng hàng với 2 sản phẩm mỗi hàng
+  const rows = [];
+  for (let i = 0; i < products.length; i += 2) {
+    rows.push(
+      <View key={i} style={styles.row}>
+        <View style={styles.column}>
+          <ProductItem product={products[i]} />
+        </View>
+        {products[i + 1] && (
+          <View style={styles.column}>
+            <ProductItem product={products[i + 1]} />
+          </View>
+        )}
       </View>
     );
   }
 
   return (
-    <FlatList
-      data={products}
-      renderItem={({ item }) => (
-        <ProductItem 
-          product={item} // Truyền toàn bộ sản phẩm
-        /> 
-      )}
-      keyExtractor={item => item.id.toString()}
-      horizontal
-    />
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      {rows}
+    </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: 'red',
+  },
+  scrollContainer: {
+    paddingHorizontal: 10,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10, // Khoảng cách giữa các hàng
+  },
+  column: {
+    flex: 1, // Căn đều các cột
+    marginHorizontal: 5, // Khoảng cách giữa các cột
+  },
+});
 
 export default ProductList;

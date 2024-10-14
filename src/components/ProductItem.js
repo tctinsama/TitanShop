@@ -1,24 +1,24 @@
 import React from 'react';
-import { View, Text, Dimensions, StyleSheet, Image } from 'react-native';
+import { View, Text, Dimensions, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 const ProductItem = ({ product }) => {
-    // console.log('Product image data:', product.image);
+    const navigation = useNavigation();
 
     // Kiểm tra nếu product.image tồn tại và không rỗng
     const hasImage = product.image && product.image.length > 0;
-
-    // Kiểm tra xem hình ảnh đã có prefix chưa
     const isBase64 = product.image.startsWith('data:image/png;base64,');
     const imageUrl = hasImage && !isBase64 
         ? `data:image/png;base64,${product.image}` 
         : hasImage 
-        ? product.image // Nếu đã có prefix, sử dụng trực tiếp
-        : 'https://example.com/default-image.png'; // Hình ảnh mặc định nếu không có
-
-    // console.log('Image URL:', imageUrl); // In ra URL hình ảnh để kiểm tra
+        ? product.image
+        : 'https://example.com/default-image.png';
 
     return (
-        <View style={styles.container}>
+        <TouchableOpacity 
+            style={styles.container} 
+            onPress={() => navigation.navigate('ProductDetail', { product })}
+        >
             <Image 
                 source={{ uri: imageUrl }} 
                 style={styles.image} 
@@ -27,7 +27,7 @@ const ProductItem = ({ product }) => {
             <Text style={styles.productName}>{product.name}</Text>
             <Text style={styles.productDescription}>{product.productdes}</Text>
             <Text style={styles.productPrice}>${product.price}</Text>
-        </View>
+        </TouchableOpacity>
     );
 };
 

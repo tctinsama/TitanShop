@@ -6,6 +6,7 @@ import Register from '../screens/Register';
 import ForgotPassword from '../screens/ForgotPassword';
 import HomeScreen from '../screens/customer/HomeScreen';
 import MyTabs from '../components/MyTabs';
+import ProductDetail from '../components/ProductDetail';
 
 const Stack = createNativeStackNavigator();
 
@@ -15,6 +16,7 @@ const AppNavigator = () => {
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="Register" component={Register} />
           <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+          <Stack.Screen name="ProductDetail" component={ProductDetail} />
           {/* Đặt MyTabs làm màn hình chính với header ẩn */}
           <Stack.Screen
             name="HomeTabs"

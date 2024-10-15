@@ -32,7 +32,7 @@ function MyTabs() {
            />
       <Tab.Screen
         name="Cart"
-        component={CartScreen}  // Bạn cần tạo màn hình NotificationsScreen nếu chưa có
+        component={CartScreen}
         options={{
           tabBarLabel: 'Cart',
           tabBarIcon: ({ color }) => (
@@ -42,7 +42,7 @@ function MyTabs() {
       />
       <Tab.Screen
         name="Notifications"
-        component={NotificationsScreen}  // Bạn cần tạo màn hình ProfileScreen nếu chưa có
+        component={NotificationsScreen}
         options={{
           tabBarLabel: 'Notifications',
           tabBarIcon: ({ color }) => (

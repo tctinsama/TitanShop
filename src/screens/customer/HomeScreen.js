@@ -1,3 +1,4 @@
+//src/screens/customer/HomeScreen.js
 import React, { useRef, useEffect, useState } from 'react';
 import { SafeAreaView, View, TextInput, Text, Image, StyleSheet, Dimensions, ScrollView } from "react-native";
 import ProductList from "../../components/ProductList";

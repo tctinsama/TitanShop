@@ -19,6 +19,7 @@ connection.connect((err) => {
     console.log('Kết nối tới MySQL thành công');
 });
 
+//src/server/server.js
 // API đăng nhập
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
@@ -31,7 +32,8 @@ app.post('/login', (req, res) => {
 
         if (results.length > 0) {
             const user = results[0];
-            res.json({ success: true, fullname: user.fullname, rolename: user.rolename });
+            // Thêm userid vào phản hồ
+            res.json({ success: true, userid: user.userid, fullname: user.fullname, rolename: user.rolename });
         } else {
             res.json({ success: false, message: 'Tên đăng nhập hoặc mật khẩu không đúng' });
         }
@@ -84,6 +86,19 @@ app.get('/categories', (req, res) => {
         res.json(cleanedResults); // Trả về danh sách danh mục
     });
 });
+
+app.get('/cart/:userid', (req, res) => {
+    const userid = req.params.userid;
+    const query = 'SELECT p.productid, p.name, p.price, c.cartquantity, p.image FROM cart c JOIN product p ON c.productid = p.productid WHERE c.userid = ? AND c.status = 1';
+
+    connection.query(query, [userid], (error, results) => {
+        if (error) {
+            return res.status(500).json({ success: false, message: 'Có lỗi xảy ra' });
+        }
+        res.json({ success: true, cartItems: results });  // Trả về đúng key 'cartItems'
+    });
+});
+
 
 // Thêm đoạn này để lắng nghe server
 app.listen(port, () => {

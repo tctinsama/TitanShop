@@ -1,8 +1,42 @@
+// src/components/ProductDetail.js
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { useUser } from '../context/UserContext'; // Import useUser để sử dụng userId
 
 const ProductDetail = ({ route }) => {
     const { product } = route.params;
+    const { userId } = useUser(); // Lấy userId từ UserContext
+    
+    const handleAddToCart = async () => {
+        if (!userId) {
+            Alert.alert('Thông báo', 'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://10.0.2.2:3000/api/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userid: userId, // Sử dụng userId từ UserContext
+                    productid: product.id,
+                    cartquantity: 1,
+                }),
+            });
+    
+            const data = await response.json();
+    
+            if (response.ok) {
+                Alert.alert('Thông báo', 'Thêm sản phẩm vào giỏ hàng thành công');
+            } else {
+                Alert.alert('Lỗi', data.message || 'Đã xảy ra lỗi khi thêm vào giỏ hàng');
+            }
+        } catch (error) {
+            Alert.alert('Lỗi', 'Không thể kết nối đến server');
+        }
+    };
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -26,7 +60,7 @@ const ProductDetail = ({ route }) => {
                     <Text style={styles.infoValue}>{product.color || 'Black'}</Text>
                 </View>
 
-                <TouchableOpacity style={styles.addToCartButton}>
+                <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
                     <Text style={styles.addToCartButtonText}>Add to Cart</Text>
                 </TouchableOpacity>
             </View>

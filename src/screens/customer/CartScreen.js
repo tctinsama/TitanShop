@@ -1,3 +1,4 @@
+//src/screens/customer/CartScreen.js
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useUser } from '../../context/UserContext'; // Import useUser để sử dụng UserContext
@@ -125,11 +126,17 @@ const CartScreen = () => {
                         keyExtractor={(item) => item.cartid.toString()}
                         contentContainerStyle={styles.cartList}
                     />
+
+
                     <View style={styles.totalContainer}>
                         <Text style={styles.totalText}>Tổng tiền: ${getTotalPrice().toFixed(2)}</Text>
-                        <TouchableOpacity style={styles.checkoutButton}>
+                        <TouchableOpacity
+                            style={styles.checkoutButton}
+                            onPress={() => navigation.navigate('Checkout', { totalAmount: getTotalPrice() })}
+                        >
                             <Text style={styles.checkoutButtonText}>Thanh Toán</Text>
                         </TouchableOpacity>
+
                     </View>
                 </>
             )}

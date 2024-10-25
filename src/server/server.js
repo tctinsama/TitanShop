@@ -1,3 +1,4 @@
+//src/server/server.js
 const express = require('express');
 const mysql = require('mysql');
 const bodyParser = require('body-parser');
@@ -83,7 +84,9 @@ app.get('/categories', (req, res) => {
         res.json(cleanedResults); // Trả về danh sách danh mục
     });
 });
-
+//src/server/server.js
+// API tải giỏ hàng
+// API lấy danh sách sản phẩm trong giỏ hàng của người dùng
 // API tải giỏ hàng
 app.get('/cart/:userid', (req, res) => {
     const userid = req.params.userid;
@@ -132,7 +135,7 @@ app.post('/api/cart/add', (req, res) => {
 app.put('/api/cart/update/:cartid', (req, res) => {
     const { cartid } = req.params;
     const { cartquantity } = req.body;
-    
+
     const query = 'UPDATE cart SET cartquantity = ? WHERE cartid = ? AND status = "active"';
 
     connection.query(query, [cartquantity, cartid], (error, results) => {
@@ -166,6 +169,34 @@ app.delete('/api/cart/remove/:cartid', (req, res) => {
         res.status(200).json({ message: 'Xóa sản phẩm khỏi giỏ hàng thành công' });
     });
 });
+//src/server/server.js
+app.post('/api/order/create', (req, res) => {
+    const { userId, address, phoneNumber, totalPayment } = req.body;
+
+    const query = 'INSERT INTO orders (userId, address, phoneNumber, totalPayment) VALUES (?, ?, ?, ?)';
+    connection.query(query, [userId, address, phoneNumber, totalPayment], (error, results) => {
+        if (error) {
+            console.error('Lỗi khi tạo đơn hàng:', error);
+            return res.status(500).json({ message: 'Lỗi khi tạo đơn hàng', error });
+        }
+        res.status(200).json({ message: 'Đặt hàng thành công', orderId: results.insertId });
+    });
+});
+
+app.get('/api/user/:userId', (req, res) => {
+    const userId = req.params.userId;
+    const query = 'SELECT userid, fullname, username, email, phonenumber, address FROM user WHERE userid = ?';
+
+    connection.query(query, [userId], (error, results) => {
+        if (error) {
+            console.error('Lỗi khi lấy thông tin người dùng:', error);
+            return res.status(500).json({ success: false, message: 'Lỗi lấy thông tin người dùng' });
+        }
+        res.status(200).json(results[0]); // Trả về kết quả đầu tiên
+    });
+});
+
+
 
 // Bắt đầu lắng nghe server
 app.listen(port, () => {

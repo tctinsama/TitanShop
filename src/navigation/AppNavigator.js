@@ -1,3 +1,4 @@
+//src/navigation/AppNavigator.js
 import React, { useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Login from '../screens/Login';
@@ -6,12 +7,14 @@ import ForgotPassword from '../screens/ForgotPassword';
 import MyTabs from '../components/MyTabs';
 import ProductDetail from '../components/ProductDetail';
 import CartScreen from '../screens/customer/CartScreen';
+import CheckoutScreen from '../screens/customer/CheckoutScreen';
 
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
   const [userId, setUserId] = useState(null);
 
+//src/navigation/AppNavigator.js
   return (
     <Stack.Navigator initialRouteName="Login">
       <Stack.Screen name="Login">
@@ -26,6 +29,7 @@ const AppNavigator = () => {
             component={MyTabs}
             options={{ headerShown: false }}  // Ẩn header nếu muốn
           />
+      <Stack.Screen name="Checkout" component={CheckoutScreen} />
     </Stack.Navigator>
   );
 };

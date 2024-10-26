@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Image, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useUser } from '../../context/UserContext'; // Import useUser để sử dụng UserContext
 import { useNavigation } from '@react-navigation/native'; // Import useNavigation
+import { useFocusEffect } from '@react-navigation/native';
 
 const CartScreen = () => {
     const { userId } = useUser(); // Lấy userId từ UserContext
@@ -15,6 +16,14 @@ const CartScreen = () => {
             fetchCartItems();
         }
     }, [userId]);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            if (userId) {
+                fetchCartItems();
+            }
+        }, [userId])
+    );
 
     const fetchCartItems = async () => {
         setLoading(true);
@@ -29,6 +38,7 @@ const CartScreen = () => {
             }
         } catch (error) {
             Alert.alert('Lỗi', 'Không thể kết nối đến server');
+            console.error('Error updating quantity:', error);
         } finally {
             setLoading(false);
         }
@@ -57,6 +67,7 @@ const CartScreen = () => {
             }
         } catch (error) {
             Alert.alert('Lỗi', 'Không thể kết nối đến server');
+            console.error('Error updating quantity:', error);
         }
     };
 
@@ -107,6 +118,7 @@ const CartScreen = () => {
             }
         } catch (error) {
             Alert.alert('Lỗi', 'Không thể kết nối đến server');
+            console.error('Error updating quantity:', error);
         }
     };
 

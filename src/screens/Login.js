@@ -22,7 +22,7 @@ const Login = ({ navigation }) => {
             if (user.success) {
                 await AsyncStorage.setItem('userid', String(user.userid));
                 setUserId(user.userid); // Cập nhật userId trong context
-                navigation.navigate(user.rolename === 'admin' ? 'AdHome' : 'HomeTabs');
+                navigation.replace(user.rolename === 'admin' ? 'AdHome' : 'HomeTabs');
             } else {
                 Alert.alert('Error', user.message);
             }

@@ -23,7 +23,10 @@ const AppNavigator = () => {
       <Stack.Screen name="Register" component={Register} />
       <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
       <Stack.Screen name="ProductDetail" component={ProductDetail} />
-      <Stack.Screen name="CartScreen" component={CartScreen} options={{ headerShown: true }} />
+      <Stack.Screen name="CartScreen" component={CartScreen} options={{ 
+    headerShown: true, 
+    title: 'Giỏ Hàng', 
+  }}  />
       <Stack.Screen
             name="HomeTabs"
             component={MyTabs}

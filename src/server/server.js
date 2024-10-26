@@ -169,19 +169,104 @@ app.delete('/api/cart/remove/:cartid', (req, res) => {
         res.status(200).json({ message: 'Xóa sản phẩm khỏi giỏ hàng thành công' });
     });
 });
+// POST: Tạo đơn hàng
+// POST: Tạo đơn hàng
+// POST: Tạo đơn hàng
 //src/server/server.js
 app.post('/api/order/create', (req, res) => {
-    const { userId, address, phoneNumber, totalPayment } = req.body;
+    const { userId, address, phoneNumber, totalPayment, cartItems } = req.body;
+    console.log('Dữ liệu nhận được từ client:', req.body); // Log toàn bộ dữ liệu nhận được
 
-    const query = 'INSERT INTO orders (userId, address, phoneNumber, totalPayment) VALUES (?, ?, ?, ?)';
-    connection.query(query, [userId, address, phoneNumber, totalPayment], (error, results) => {
-        if (error) {
-            console.error('Lỗi khi tạo đơn hàng:', error);
-            return res.status(500).json({ message: 'Lỗi khi tạo đơn hàng', error });
+    // Lấy tên người dùng từ bảng user dựa trên userId
+    const userQuery = 'SELECT fullname FROM user WHERE userid = ?';
+
+    connection.query(userQuery, [userId], (userError, userResults) => {
+        if (userError) {
+            console.error('Lỗi khi truy vấn thông tin người dùng:', userError);
+            return res.status(500).json({ message: 'Lỗi lấy thông tin người dùng' });
         }
-        res.status(200).json({ message: 'Đặt hàng thành công', orderId: results.insertId });
+
+        if (userResults.length === 0) {
+            console.error('Không tìm thấy người dùng với userId:', userId);
+            return res.status(404).json({ message: 'Người dùng không tồn tại' });
+        }
+
+        const userName = userResults[0].fullname;
+        const orderStatusId = 1; // Order status mặc định = 1 (Chờ xác nhận)
+
+        // Tạo đơn hàng mới
+        const orderQuery = `
+            INSERT INTO \`order\` (userid, address, phonenumber, total, orderstatusid, name)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `;
+
+        const values = [userId, address, phoneNumber, totalPayment, orderStatusId, userName];
+
+        connection.query(orderQuery, values, (orderError, orderResults) => {
+            if (orderError) {
+                console.error('Lỗi khi tạo đơn hàng:', orderError);
+                return res.status(500).json({ message: 'Thanh toán không thành công' });
+            }
+
+            console.log('Đơn hàng được tạo thành công với ID:', orderResults.insertId);
+            const orderCode = orderResults.insertId; // Lấy ID của đơn hàng vừa tạo
+
+            // Kiểm tra xem giỏ hàng có dữ liệu không
+            if (!cartItems || cartItems.length === 0) {
+                console.error('Giỏ hàng trống!'); // Log lỗi giỏ hàng trống
+                return res.status(400).json({ message: 'Giỏ hàng trống!' });
+            }
+
+            // Lưu chi tiết đơn hàng
+            const orderDetailsData = cartItems.map(item => [
+                orderCode, item.productId, item.size || 'default', item.color || 'default',
+                item.brand || 'unknown', item.quantity > 0 ? item.quantity : 1
+            ]);
+
+            const orderDetailsQuery = `
+                INSERT INTO orderdetails (ordercode, productid, size, color, brand, quantity)
+                VALUES ?
+            `;
+
+            connection.query(orderDetailsQuery, [orderDetailsData], (detailsError) => {
+                if (detailsError) {
+                    console.error('Lỗi khi thêm chi tiết đơn hàng:', detailsError);
+                    return res.status(500).json({ message: 'Lỗi khi thêm chi tiết đơn hàng' });
+                }
+                res.status(200).json({ message: 'Đặt hàng thành công!' });
+            });
+
+
+            connection.query(orderDetailsQuery, [orderDetailsData], (detailsError) => {
+                if (detailsError) {
+                    console.error('Lỗi khi lưu chi tiết đơn hàng:', detailsError);
+                    return res.status(500).json({ message: 'Lỗi lưu chi tiết đơn hàng' });
+                }
+
+                res.status(200).json({ message: 'Đặt hàng thành công', orderCode });
+            });
+        });
     });
 });
+
+app.post('/payment', (req, res) => {
+  const { cartItems } = req.body;
+
+  if (!cartItems || cartItems.length === 0) {
+    return res.status(400).json({ success: false, message: 'Giỏ hàng trống.' });
+  }
+
+  for (const item of cartItems) {
+    if (!item.productid || !item.productName || item.productPrice == null) {
+      return res.status(400).json({ success: false, message: 'Sản phẩm không hợp lệ.' });
+    }
+  }
+
+  // Xử lý thanh toán thành công
+  return res.status(200).json({ success: true, message: 'Thanh toán thành công.' });
+});
+
+
 
 app.get('/api/user/:userId', (req, res) => {
     const userId = req.params.userId;

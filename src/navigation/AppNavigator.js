@@ -8,6 +8,7 @@ import MyTabs from '../components/MyTabs';
 import ProductDetail from '../components/ProductDetail';
 import CartScreen from '../screens/customer/CartScreen';
 import CheckoutScreen from '../screens/customer/CheckoutScreen';
+import OrderSuccess from '../screens/customer/OrderSuccess';
 
 const Stack = createNativeStackNavigator();
 
@@ -33,6 +34,8 @@ const AppNavigator = () => {
             options={{ headerShown: false }}  // Ẩn header nếu muốn
           />
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
+      <Stack.Screen name="OrderSuccess" component={OrderSuccess} />
+
     </Stack.Navigator>
   );
 };

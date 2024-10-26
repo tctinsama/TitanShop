@@ -144,7 +144,9 @@ const CartScreen = () => {
                         <Text style={styles.totalText}>Tổng tiền: ${getTotalPrice().toFixed(2)}</Text>
                         <TouchableOpacity
                             style={styles.checkoutButton}
-                            onPress={() => navigation.navigate('Checkout', { totalAmount: getTotalPrice() })}
+                            onPress={() => navigation.navigate('Checkout', { totalAmount: getTotalPrice(),
+                             cartItems: cartItems
+                             })}
                         >
                             <Text style={styles.checkoutButtonText}>Thanh Toán</Text>
                         </TouchableOpacity>

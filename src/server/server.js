@@ -84,17 +84,15 @@ app.get('/categories', (req, res) => {
         res.json(cleanedResults); // Trả về danh sách danh mục
     });
 });
-//src/server/server.js
-// API tải giỏ hàng
-// API lấy danh sách sản phẩm trong giỏ hàng của người dùng
+
 // API tải giỏ hàng
 app.get('/cart/:userid', (req, res) => {
     const userid = req.params.userid;
     const query = `
-        SELECT p.productid, p.name AS productName, p.price AS productPrice, c.cartquantity, p.image AS productImage, c.cartid
+        SELECT p.productid, p.name AS name, p.price AS productPrice, c.cartquantity, p.image AS productImage, c.cartid
         FROM cart c
         JOIN product p ON c.productid = p.productid
-        WHERE c.userid = ? AND c.status = 'active'
+        WHERE c.userid = ? AND c.status = 'active' 
     `;
 
     connection.query(query, [userid], (error, results) => {
@@ -169,8 +167,7 @@ app.delete('/api/cart/remove/:cartid', (req, res) => {
         res.status(200).json({ message: 'Xóa sản phẩm khỏi giỏ hàng thành công' });
     });
 });
-// POST: Tạo đơn hàng
-// POST: Tạo đơn hàng
+
 // POST: Tạo đơn hàng
 //src/server/server.js
 app.post('/api/order/create', (req, res) => {
@@ -257,7 +254,7 @@ app.post('/payment', (req, res) => {
   }
 
   for (const item of cartItems) {
-    if (!item.productid || !item.productName || item.productPrice == null) {
+    if (!item.productid || !item.name || item.productPrice == null) {
       return res.status(400).json({ success: false, message: 'Sản phẩm không hợp lệ.' });
     }
   }
@@ -281,6 +278,62 @@ app.get('/api/user/:userId', (req, res) => {
     });
 });
 
+app.get('/api/search', (req, res) => {
+    const { search } = req.query;
+
+    console.log('search:', search);
+
+    let query = `
+        SELECT p.productid, p.name, p.productdes, p.price, p.image, c.categoryname
+        FROM product p
+        LEFT JOIN category c ON p.categoryproductid = c.categoryproductid
+        WHERE 1=1
+    `;
+    const params = [];
+
+    if (search && search.trim()) {
+        query += ' AND (p.name LIKE ? OR c.categoryname LIKE ?)';
+        const searchTerm = `%${search.trim()}%`;
+        params.push(searchTerm, searchTerm);
+    }
+
+    console.log('Final Query:', query);
+    console.log('Params:', params);
+
+    connection.query(query, params, (error, results) => {
+        if (error) {
+            console.error('Database error:', error);
+            return res.status(500).json({ success: false, message: 'Có lỗi xảy ra khi tìm kiếm sản phẩm' });
+        }
+
+        const cleanedResults = results.map(product => ({
+            ...product,
+            image: product.image ? product.image.toString('base64') : null
+        }));
+
+        res.json({ success: true, results: cleanedResults });
+    });
+});
+
+// API tải sản phẩm theo danh mục
+app.get('/api/products/category/:categoryId', (req, res) => {
+    const categoryId = req.params.categoryId;
+    const query = 'SELECT productid, name, productdes, price, image FROM product WHERE categoryproductid = ?';
+
+    connection.query(query, [categoryId], (error, results) => {
+        if (error) {
+            console.error('Database error:', error);
+            return res.status(500).json({ message: 'Có lỗi xảy ra khi tải sản phẩm theo danh mục', success: false });
+        }
+
+        const cleanedResults = results.map(product => ({
+            ...product,
+            image: product.image ? product.image.toString('base64') : null // Chuyển đổi Buffer sang base64
+        }));
+
+        res.json(cleanedResults); // Trả về danh sách sản phẩm theo danh mục
+    });
+});
 
 
 // Bắt đầu lắng nghe server

@@ -1,13 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { SafeAreaView, View, TextInput, Text, Image, StyleSheet, Dimensions, ScrollView, TouchableOpacity } from "react-native";
-import { useNavigation } from '@react-navigation/native'; // Import useNavigation
-import { useUser } from '../../context/UserContext'; // Import useUser
+import { useNavigation } from '@react-navigation/native';
+import { useUser } from '../../context/UserContext';
 import ProductList from "../../components/ProductList";
 import HorizontalProductList from "../../components/HorizontalProductList";
 import CategoryList from "../../components/CategoryList";
 import { useFocusEffect } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-
 
 const HomeScreen = () => {
     const images = [
@@ -15,15 +14,14 @@ const HomeScreen = () => {
         require("../../../assets/images/carousel_2.png"),
         require("../../../assets/images/carousel_3.png"),
     ];
-
-    const { userId } = useUser(); // Get userId from context
+    const { userId } = useUser();
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [cartQuantity, setCartQuantity] = useState(0); // State to store cart quantity
+    const [cartQuantity, setCartQuantity] = useState(0);
+    const [searchTerm, setSearchTerm] = useState('');
     const scrollViewRef = useRef(null);
     const screenWidth = Dimensions.get("window").width;
-    const navigation = useNavigation(); // Initialize navigation
-
-    // Fetch cart quantity
+    const navigation = useNavigation();
+  
     const fetchCartQuantity = async () => {
         try {
             const response = await fetch(`http://10.0.2.2:3000/cart/${userId}`);
@@ -43,14 +41,12 @@ const HomeScreen = () => {
         }
     }, [userId]);
 
-    // Auto-scroll for carousel
     useEffect(() => {
         const interval = setInterval(() => {
             setCurrentIndex((prevIndex) =>
                 prevIndex === images.length - 1 ? 0 : prevIndex + 1
             );
         }, 3000);
-
         return () => clearInterval(interval);
     }, []);
 
@@ -67,32 +63,36 @@ const HomeScreen = () => {
             }
         }, [userId])
     );
-    
+
+    const handleSearchSubmit = () => {
+        if (searchTerm.trim()) {
+            const productName = searchTerm; // or const categoryName = searchTerm;
+            navigation.navigate('SearchResult', { searchTerm: productName }); // Ensure searchTerm gets passed correctly
+        }
+    };
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.innerContainer}>
-                    
-                    {/* Header with logo and cart icon */}
                     <View style={styles.headerTitleContainer}>
-                         <TouchableOpacity 
-                            style={styles.menuButton} // Style cho nút menu
+                        <TouchableOpacity
+                            style={styles.menuButton}
                             onPress={() => {/* Xử lý sự kiện cho nút menu ở đây */}}
                         >
                             <MaterialCommunityIcons name="menu" size={30} color="black" />
                         </TouchableOpacity>
-
                         <Image
                             style={styles.headerTitle}
-                            source={require("../../../assets/images/logo-removebg-preview.png")} 
+                            source={require("../../../assets/images/logo-removebg-preview.png")}
                             resizeMode={"contain"}
                         />
-                        <TouchableOpacity 
-                            style={styles.cartIconContainer} 
+                        <TouchableOpacity
+                            style={styles.cartIconContainer}
                             onPress={() => navigation.navigate('CartScreen')}
                         >
                             <Image
-                                source={require("../../../assets/images/cart.png")} 
+                                source={require("../../../assets/images/cart.png")}
                                 resizeMode={"contain"}
                                 style={styles.cartIcon}
                             />
@@ -103,28 +103,27 @@ const HomeScreen = () => {
                             )}
                         </TouchableOpacity>
                     </View>
-
-                    {/* Rest of the HomeScreen content */}
                     <View style={styles.searchContainer}>
                         <TextInput
                             style={styles.searchTextInput}
                             placeholder="Search any Product.."
                             placeholderTextColor="#C3C3C3"
+                            value={searchTerm}
+                            onChangeText={setSearchTerm}
+                            onSubmitEditing={handleSearchSubmit}
                         />
-                        <Image
-                            source={require("../../../assets/images/search.png")} 
-                            resizeMode={"contain"}
-                            style={styles.searchArrowIcon}
-                        />
+                        <TouchableOpacity onPress={handleSearchSubmit}>
+                            <Image
+                                source={require("../../../assets/images/search.png")}
+                                resizeMode={"contain"}
+                                style={styles.searchArrowIcon}
+                            />
+                        </TouchableOpacity>
                     </View>
-                    
-                    {/* Category list */}
                     <View style={styles.categoryContainer}>
                         <Text style={styles.CategoryStl}>{"All Category"}</Text>
                         <CategoryList />
                     </View>
-
-                    {/* Carousel images with auto-scroll */}
                     <ScrollView
                         horizontal
                         pagingEnabled
@@ -140,8 +139,6 @@ const HomeScreen = () => {
                             />
                         ))}
                     </ScrollView>
-
-                    {/* Pagination dots */}
                     <View style={styles.paginationContainer}>
                         {images.map((_, index) => (
                             <View
@@ -153,14 +150,10 @@ const HomeScreen = () => {
                             />
                         ))}
                     </View>
-
-                    {/* Deal list */}
                     <View style={styles.productSection}>
                         <Text style={styles.Title}>{"Deal of the Day"}</Text>
                         <HorizontalProductList />
                     </View>
-
-                    {/* All product list */}
                     <View style={styles.productSection}>
                         <Text style={styles.Title}>{"Recommended products"}</Text>
                         <ProductList />
@@ -169,7 +162,7 @@ const HomeScreen = () => {
             </ScrollView>
         </SafeAreaView>
     );
-}; 
+};
 
 const styles = StyleSheet.create({
     safeArea: {
@@ -216,6 +209,12 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 12,
         fontWeight: 'bold',
+    },
+    CategoryStl: {
+        color: '#000000',
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginLeft: 10,
     },
     searchContainer: {
         flexDirection: "row",
@@ -274,10 +273,9 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginRight: 8,
     },
-
-    menuButton: { // Style cho nút menu
-        paddingRight: 10,
-    }
+    menuButton: {
+        padding: 10,
+    },
 });
 
 export default HomeScreen;

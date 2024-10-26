@@ -9,6 +9,11 @@ import ProductDetail from '../components/ProductDetail';
 import CartScreen from '../screens/customer/CartScreen';
 import CheckoutScreen from '../screens/customer/CheckoutScreen';
 import OrderSuccess from '../screens/customer/OrderSuccess';
+import SearchResult from '../screens/customer/SearchResult';
+import CategoryScreen from '../screens/customer/CategoryScreen';
+
+
+
 
 const Stack = createNativeStackNavigator();
 
@@ -24,6 +29,8 @@ const AppNavigator = () => {
       <Stack.Screen name="Register" component={Register} />
       <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
       <Stack.Screen name="ProductDetail" component={ProductDetail} />
+      <Stack.Screen name="SearchResult" component={SearchResult} options={{ headerShown: false }}/>
+      <Stack.Screen name="CategoryScreen" component={CategoryScreen} options={{ headerShown: false }}/>
       <Stack.Screen name="CartScreen" component={CartScreen} options={{ 
     headerShown: true, 
     title: 'Giỏ Hàng', 

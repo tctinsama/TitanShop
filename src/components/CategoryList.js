@@ -2,17 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, ActivityIndicator, View, Text } from 'react-native';
 import axios from 'axios';
 import CategoryItem from './CategoryItem';
+import { useNavigation } from '@react-navigation/native'; // Nhập useNavigation
 
 const CategoryList = () => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const navigation = useNavigation(); // Sử dụng useNavigation để lấy navigation
 
     useEffect(() => {
         const fetchCategories = async () => {
             try {
                 const response = await axios.get('http://10.0.2.2:3000/categories');
-                
+
                 // Kiểm tra dữ liệu
                 if (Array.isArray(response.data)) {
                     // Chỉ lấy những thuộc tính cần thiết
@@ -58,6 +60,7 @@ const CategoryList = () => {
                 <CategoryItem 
                     key={category.id} // Đảm bảo rằng mỗi CategoryItem có key duy nhất
                     category={category} // Truyền toàn bộ danh mục
+                    navigation={navigation} // Truyền navigation cho CategoryItem
                 /> 
             ))}
         </ScrollView>

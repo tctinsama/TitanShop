@@ -1,16 +1,19 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 
-const CategoryItem = ({ category }) => {
+const CategoryItem = ({ category, navigation }) => {
     return (
-        <View style={styles.categoryItem}>
+        <TouchableOpacity 
+            style={styles.categoryItem} 
+            onPress={() => navigation.navigate('CategoryScreen', { categoryId: category.id })} // Điều hướng khi nhấn
+        >
             <Image
                 source={{ uri: category.image }} // Load hình ảnh từ URL
-                resizeMode={"cover"}
+                resizeMode="cover"
                 style={styles.categoryImage}
             />
             <Text style={styles.categoryLabel}>{category.name}</Text>
-        </View>
+        </TouchableOpacity>
     );
 };
 

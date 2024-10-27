@@ -32,13 +32,14 @@ const CartScreen = () => {
             const data = await response.json();
 
             if (response.ok) {
+                console.log('Cart Items:', data.cartItems); // Log cart items
                 setCartItems(data.cartItems);
             } else {
                 Alert.alert('Lỗi', data.message || 'Không thể tải giỏ hàng');
             }
         } catch (error) {
             Alert.alert('Lỗi', 'Không thể kết nối đến server');
-            console.error('Error updating quantity:', error);
+            console.error('Error fetching cart items:', error);
         } finally {
             setLoading(false);
         }
@@ -49,7 +50,9 @@ const CartScreen = () => {
             Alert.alert('Thông báo', 'Số lượng phải lớn hơn 0');
             return;
         }
-    
+
+        console.log(`Updating quantity for cart ID: ${cartid}, New Quantity: ${newQuantity}`); // Log thông tin
+
         try {
             const response = await fetch(`http://10.0.2.2:3000/api/cart/update/${cartid}`, {
                 method: 'PUT',
@@ -58,9 +61,9 @@ const CartScreen = () => {
                 },
                 body: JSON.stringify({ cartquantity: newQuantity }),
             });
-    
+
             if (response.ok) {
-                fetchCartItems(); // Tải lại giỏ hàng sau khi cập nhật
+                fetchCartItems();
             } else {
                 const data = await response.json();
                 Alert.alert('Lỗi', data.message || 'Không thể cập nhật số lượng sản phẩm');
@@ -70,6 +73,7 @@ const CartScreen = () => {
             console.error('Error updating quantity:', error);
         }
     };
+
 
     const renderCartItem = ({ item }) => (
         <View style={styles.cartItem}>
@@ -104,6 +108,8 @@ const CartScreen = () => {
     );
 
     const handleRemoveItem = async (cartid) => {
+        console.log(`Removing item with cart ID: ${cartid}`); // Log thông tin
+
         try {
             const response = await fetch(`http://10.0.2.2:3000/api/cart/remove/${cartid}`, {
                 method: 'DELETE',
@@ -118,7 +124,7 @@ const CartScreen = () => {
             }
         } catch (error) {
             Alert.alert('Lỗi', 'Không thể kết nối đến server');
-            console.error('Error updating quantity:', error);
+            console.error('Error removing item:', error);
         }
     };
 
@@ -141,17 +147,28 @@ const CartScreen = () => {
 
 
                     <View style={styles.totalContainer}>
-                        <Text style={styles.totalText}>Tổng tiền: ${getTotalPrice().toFixed(2)}</Text>
-                        <TouchableOpacity
-                            style={styles.checkoutButton}
-                            onPress={() => navigation.navigate('Checkout', { totalAmount: getTotalPrice(),
-                             cartItems: cartItems
-                             })}
-                        >
-                            <Text style={styles.checkoutButtonText}>Thanh Toán</Text>
-                        </TouchableOpacity>
+                         <Text style={styles.totalText}>
+                             Tổng tiền: ${getTotalPrice().toFixed(2)}
+                         </Text>
+                         <TouchableOpacity
+                             style={styles.checkoutButton}
+                             onPress={() => {
+                                 const totalAmount = getTotalPrice();
+                                 const productIds = cartItems.map(item => item.productid); // Lấy danh sách productid
+                                 console.log('Navigating to Checkout with:', { totalAmount, cartItems, productIds });
 
-                    </View>
+                                 // Điều hướng và truyền params bao gồm productIds
+                                 navigation.navigate('Checkout', {
+                                     totalAmount,
+                                     cartItems,
+                                     productIds
+                                 });
+                             }}
+                         >
+                             <Text style={styles.checkoutButtonText}>Thanh Toán</Text>
+                         </TouchableOpacity>
+                     </View>
+
                 </>
             )}
         </View>

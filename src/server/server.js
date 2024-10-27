@@ -170,81 +170,137 @@ app.delete('/api/cart/remove/:cartid', (req, res) => {
 
 // POST: Tạo đơn hàng
 //src/server/server.js
+// src/server/server.js
 app.post('/api/order/create', (req, res) => {
-    const { userId, address, phoneNumber, totalPayment, cartItems } = req.body;
-    console.log('Dữ liệu nhận được từ client:', req.body); // Log toàn bộ dữ liệu nhận được
+    const { userId, address, phoneNumber, totalPayment, cartItems, voucherCode } = req.body;
 
-    // Lấy tên người dùng từ bảng user dựa trên userId
-    const userQuery = 'SELECT fullname FROM user WHERE userid = ?';
+    const getUserQuery = 'SELECT fullname FROM user WHERE userid = ?';
 
-    connection.query(userQuery, [userId], (userError, userResults) => {
-        if (userError) {
-            console.error('Lỗi khi truy vấn thông tin người dùng:', userError);
-            return res.status(500).json({ message: 'Lỗi lấy thông tin người dùng' });
+    // Bắt đầu transaction
+    connection.beginTransaction((transactionError) => {
+        if (transactionError) {
+            console.error('Lỗi khởi tạo transaction:', transactionError);
+            return res.status(500).json({ message: 'Lỗi khởi tạo giao dịch' });
         }
 
-        if (userResults.length === 0) {
-            console.error('Không tìm thấy người dùng với userId:', userId);
-            return res.status(404).json({ message: 'Người dùng không tồn tại' });
-        }
-
-        const userName = userResults[0].fullname;
-        const orderStatusId = 1; // Order status mặc định = 1 (Chờ xác nhận)
-
-        // Tạo đơn hàng mới
-        const orderQuery = `
-            INSERT INTO \`order\` (userid, address, phonenumber, total, orderstatusid, name)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `;
-
-        const values = [userId, address, phoneNumber, totalPayment, orderStatusId, userName];
-
-        connection.query(orderQuery, values, (orderError, orderResults) => {
-            if (orderError) {
-                console.error('Lỗi khi tạo đơn hàng:', orderError);
-                return res.status(500).json({ message: 'Thanh toán không thành công' });
+        // Truy vấn để lấy tên người dùng
+        connection.query(getUserQuery, [userId], (userError, userResults) => {
+            if (userError || userResults.length === 0) {
+                console.error('Lỗi khi lấy thông tin người dùng:', userError || 'Không tìm thấy người dùng');
+                return connection.rollback(() => {
+                    res.status(500).json({ message: 'Lỗi khi lấy thông tin người dùng' });
+                });
             }
 
-            console.log('Đơn hàng được tạo thành công với ID:', orderResults.insertId);
-            const orderCode = orderResults.insertId; // Lấy ID của đơn hàng vừa tạo
+            const userName = userResults[0].fullname;
 
-            // Kiểm tra xem giỏ hàng có dữ liệu không
-            if (!cartItems || cartItems.length === 0) {
-                console.error('Giỏ hàng trống!'); // Log lỗi giỏ hàng trống
-                return res.status(400).json({ message: 'Giỏ hàng trống!' });
-            }
-
-            // Lưu chi tiết đơn hàng
-            const orderDetailsData = cartItems.map(item => [
-                orderCode, item.productId, item.size || 'default', item.color || 'default',
-                item.brand || 'unknown', item.quantity > 0 ? item.quantity : 1
-            ]);
-
-            const orderDetailsQuery = `
-                INSERT INTO orderdetails (ordercode, productid, size, color, brand, quantity)
-                VALUES ?
+            // Thêm dữ liệu vào bảng `order`
+            const orderQuery = `
+                INSERT INTO \`order\` (orderdate, orderstatusid, voucherCode, total, userid, name, phonenumber, address, status)
+                VALUES (CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?)
             `;
+            const orderValues = [
+                1, // orderstatusid: 1 là "chờ xác nhận"
+                voucherCode || null,
+                totalPayment,
+                userId,
+                userName,
+                phoneNumber,
+                address,
+                1 // status: 1 là "active"
+            ];
 
-            connection.query(orderDetailsQuery, [orderDetailsData], (detailsError) => {
-                if (detailsError) {
-                    console.error('Lỗi khi thêm chi tiết đơn hàng:', detailsError);
-                    return res.status(500).json({ message: 'Lỗi khi thêm chi tiết đơn hàng' });
+            connection.query(orderQuery, orderValues, (orderError, orderResults) => {
+                if (orderError) {
+                    console.error('Lỗi khi thêm đơn hàng:', orderError);
+                    return connection.rollback(() => {
+                        res.status(500).json({ message: 'Lỗi khi thêm đơn hàng' });
+                    });
                 }
-                res.status(200).json({ message: 'Đặt hàng thành công!' });
-            });
 
+                const orderCode = orderResults.insertId; // Lấy mã đơn hàng vừa tạo
 
-            connection.query(orderDetailsQuery, [orderDetailsData], (detailsError) => {
-                if (detailsError) {
-                    console.error('Lỗi khi lưu chi tiết đơn hàng:', detailsError);
-                    return res.status(500).json({ message: 'Lỗi lưu chi tiết đơn hàng' });
-                }
+                // ** Bước 1: Truy vấn để lấy thông tin size, color, và brand từ bảng `quantity` và `brand` **
+                const orderDetailsData = [];
 
-                res.status(200).json({ message: 'Đặt hàng thành công', orderCode });
+                const quantityQueries = cartItems.map(item => {
+                    return new Promise((resolve, reject) => {
+                        const quantityQuery = `
+                            SELECT q.size, q.color, b.brandname AS brand
+                            FROM quantity q
+                            JOIN brand b ON q.productid = ?
+                            WHERE q.productid = ?
+                        `;
+                        connection.query(quantityQuery, [item.productid, item.productid], (quantityError, quantityResults) => {
+                            if (quantityError || quantityResults.length === 0) {
+                                return reject('Lỗi khi lấy thông tin size, color hoặc brand');
+                            }
+
+                            const { size, color, brand } = quantityResults[0];
+
+                            // ** Bước 2: Thêm thông tin vào orderDetailsData **
+                            orderDetailsData.push([
+                                orderCode,
+                                item.productid,
+                                size,  // size từ bảng quantity
+                                color, // color từ bảng quantity
+                                item.quantity > 0 ? item.quantity : 1,
+                                brand || 'unknown' // brand từ bảng brand
+                            ]);
+
+                            resolve();
+                        });
+                    });
+                });
+
+                // Chờ tất cả các truy vấn hoàn thành
+                Promise.all(quantityQueries)
+                    .then(() => {
+                        // ** Bước 3: Thêm dữ liệu vào `orderdetails` **
+                        const orderDetailsQuery = `
+                            INSERT INTO orderdetails (ordercode, productid, size, color, quantity, brand)
+                            VALUES ?
+                        `;
+
+                        connection.query(orderDetailsQuery, [orderDetailsData], (detailsError) => {
+                            if (detailsError) {
+                                console.error('Lỗi khi thêm chi tiết đơn hàng:', detailsError);
+                                return connection.rollback(() => {
+                                    res.status(500).json({ message: 'Lỗi khi thêm chi tiết đơn hàng' });
+                                });
+                            }
+
+                            // Commit transaction nếu thành công
+                            connection.commit((commitError) => {
+                                if (commitError) {
+                                    console.error('Lỗi khi commit transaction:', commitError);
+                                    return connection.rollback(() => {
+                                        res.status(500).json({ message: 'Lỗi khi hoàn tất giao dịch' });
+                                    });
+                                }
+
+                                res.status(200).json({
+                                    success: true,
+                                    orderCode,
+                                    message: 'Đặt hàng thành công!'
+                                });
+                            });
+                        });
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        return connection.rollback(() => {
+                            res.status(500).json({ message: 'Lỗi khi lấy thông tin size, color hoặc brand' });
+                        });
+                    });
             });
         });
     });
 });
+
+
+
+
 
 app.post('/payment', (req, res) => {
   const { cartItems } = req.body;

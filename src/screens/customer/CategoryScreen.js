@@ -4,6 +4,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useUser } from '../../context/UserContext';
 import SearchResultProductList from "../../components/SearchResultProductList";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { API_URL } from '@env';
+
 
 const CategoryScreen = () => {
     const { userId } = useUser();
@@ -16,7 +18,7 @@ const CategoryScreen = () => {
 
     const fetchCartQuantity = async () => {
         try {
-            const response = await fetch(`http://10.0.2.2:3000/cart/${userId}`);
+            const response = await fetch(`${API_URL}/cart/${userId}`);
             const data = await response.json();
             if (response.ok) {
                 const totalQuantity = data.cartItems.reduce((sum, item) => sum + item.cartquantity, 0);
@@ -29,7 +31,7 @@ const CategoryScreen = () => {
 
     const fetchProducts = async () => {
         try {
-            const response = await fetch(`http://10.0.2.2:3000/api/products/category/${categoryId}`);
+            const response = await fetch(`${API_URL}/api/products/category/${categoryId}`);
             const data = await response.json();
             if (response.ok) {
                 setProducts(data);

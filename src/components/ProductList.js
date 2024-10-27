@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 import axios from 'axios';
 import ProductItem from './ProductItem';
+import { API_URL } from '@env';
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -11,12 +12,11 @@ const ProductList = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('http://10.0.2.2:3000/products');
-
+        const response = await axios.get(`${API_URL}/products`);
         if (Array.isArray(response.data)) {
           const filteredProducts = response.data.map(product => ({
             id: product.productid,
-            name: product.name || "No name available",
+            name: product.productName || "No name available",
             productdes: product.productdes || "No description available",
             image: product.image ? `data:image/png;base64,${product.image}` : 'https://i.imgur.com/1tMFzp8.png',
             price: product.price != null ? product.price : 0,
@@ -34,7 +34,7 @@ const ProductList = () => {
     };
 
     fetchProducts();
-  }, []);
+  }, []); // Đảm bảo useEffect luôn được gọi sau các useState
 
   if (loading) {
     return (
@@ -52,7 +52,6 @@ const ProductList = () => {
     );
   }
 
-  // Chia sản phẩm thành từng hàng với 2 sản phẩm mỗi hàng
   const rows = [];
   for (let i = 0; i < products.length; i += 2) {
     rows.push(
@@ -96,11 +95,11 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10, // Khoảng cách giữa các hàng
+    marginBottom: 10,
   },
   column: {
-    flex: 1, // Căn đều các cột
-    marginHorizontal: 5, // Khoảng cách giữa các cột
+    flex: 1,
+    marginHorizontal: 5,
   },
 });
 

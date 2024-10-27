@@ -4,6 +4,8 @@ import { View, Text, Image, FlatList, StyleSheet, TouchableOpacity, Alert } from
 import { useUser } from '../../context/UserContext'; // Import useUser để sử dụng UserContext
 import { useNavigation } from '@react-navigation/native'; // Import useNavigation
 import { useFocusEffect } from '@react-navigation/native';
+import { API_URL } from '@env';
+
 
 const CartScreen = () => {
     const { userId } = useUser(); // Lấy userId từ UserContext
@@ -28,7 +30,7 @@ const CartScreen = () => {
     const fetchCartItems = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`http://10.0.2.2:3000/cart/${userId}`);
+            const response = await fetch(`${API_URL}/cart/${userId}`);
             const data = await response.json();
 
             if (response.ok) {
@@ -54,7 +56,7 @@ const CartScreen = () => {
         console.log(`Updating quantity for cart ID: ${cartid}, New Quantity: ${newQuantity}`); // Log thông tin
 
         try {
-            const response = await fetch(`http://10.0.2.2:3000/api/cart/update/${cartid}`, {
+            const response = await fetch(`${API_URL}/api/cart/update/${cartid}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -111,7 +113,7 @@ const CartScreen = () => {
         console.log(`Removing item with cart ID: ${cartid}`); // Log thông tin
 
         try {
-            const response = await fetch(`http://10.0.2.2:3000/api/cart/remove/${cartid}`, {
+            const response = await fetch(`${API_URL}/api/cart/remove/${cartid}`, {
                 method: 'DELETE',
             });
 

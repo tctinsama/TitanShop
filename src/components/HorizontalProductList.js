@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, ActivityIndicator, View, Text } from 'react-native';
 import axios from 'axios';
 import ProductItem from './ProductItem';
+import { API_URL } from '@env';
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -11,7 +12,7 @@ const ProductList = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('http://10.0.2.2:3000/products');
+        const response = await axios.get(`${API_URL}/products`);
         
         if (Array.isArray(response.data)) {
           const filteredProducts = response.data.map(product => ({

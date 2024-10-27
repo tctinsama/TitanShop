@@ -1,6 +1,6 @@
 import axios from 'axios';
+import { API_URL } from '@env';
 
-const API_URL = 'http://10.0.2.2:3000';
 
 export const login = async (username, password) => {
     try {

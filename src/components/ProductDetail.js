@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useUser } from '../context/UserContext'; // Import useUser để sử dụng userId
+import { API_URL } from '@env';
 
 const ProductDetail = ({ route }) => {
     const { product } = route.params;
@@ -14,7 +15,7 @@ const ProductDetail = ({ route }) => {
         }
 
         try {
-            const response = await fetch('http://10.0.2.2:3000/api/cart/add', {
+            const response = await fetch(`${API_URL}/api/cart/add`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

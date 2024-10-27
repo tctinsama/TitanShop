@@ -3,6 +3,7 @@ import { ScrollView, ActivityIndicator, View, Text } from 'react-native';
 import axios from 'axios';
 import CategoryItem from './CategoryItem';
 import { useNavigation } from '@react-navigation/native'; // Nhập useNavigation
+import { API_URL } from '@env';
 
 const CategoryList = () => {
     const [categories, setCategories] = useState([]);
@@ -13,7 +14,7 @@ const CategoryList = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await axios.get('http://10.0.2.2:3000/categories');
+                const response = await axios.get(`${API_URL}/categories`);
 
                 // Kiểm tra dữ liệu
                 if (Array.isArray(response.data)) {

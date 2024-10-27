@@ -7,6 +7,8 @@ import HorizontalProductList from "../../components/HorizontalProductList";
 import CategoryList from "../../components/CategoryList";
 import { useFocusEffect } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { API_URL } from '@env';
+
 
 const HomeScreen = () => {
     const images = [
@@ -24,7 +26,7 @@ const HomeScreen = () => {
   
     const fetchCartQuantity = async () => {
         try {
-            const response = await fetch(`http://10.0.2.2:3000/cart/${userId}`);
+            const response = await fetch(`${API_URL}/cart/${userId}`);
             const data = await response.json();
             if (response.ok) {
                 const totalQuantity = data.cartItems.reduce((sum, item) => sum + item.cartquantity, 0);

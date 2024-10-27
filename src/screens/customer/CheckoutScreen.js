@@ -3,6 +3,9 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, StyleSheet } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useUser } from '../../context/UserContext';
+import { API_URL } from '@env';
+
+
 
 const CheckoutScreen = () => {
     const { userId } = useUser();
@@ -12,8 +15,8 @@ const CheckoutScreen = () => {
     // Nhận productIds từ route params
     const { productIds = [], totalAmount, cartItems } = route.params || {};
 
-    console.log('Route Params:', route.params);
-    console.log('Received productIds:', productIds);
+//    console.log('Route Params:', route.params);
+//    console.log('Received productIds:', productIds);
 
     const [userAddress, setUserAddress] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -26,7 +29,7 @@ const CheckoutScreen = () => {
 
     const fetchUserInfo = async () => {
         try {
-            const response = await fetch(`http://10.0.2.2:3000/api/user/${userId}`);
+            const response = await fetch(`${API_URL}/api/user/${userId}`);
             const data = await response.json();
             if (response.ok) {
                 setUserAddress(data.address || '');
@@ -59,7 +62,7 @@ const CheckoutScreen = () => {
         });
 
         try {
-            const response = await fetch('http://10.0.2.2:3000/api/order/create', {
+            const response = await fetch('${API_URL}/api/order/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

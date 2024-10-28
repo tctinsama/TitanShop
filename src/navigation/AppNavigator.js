@@ -32,9 +32,9 @@ const AppNavigator = () => {
       <Stack.Screen name="SearchResult" component={SearchResult} options={{ headerShown: false }}/>
       <Stack.Screen name="CategoryScreen" component={CategoryScreen} options={{ headerShown: false }}/>
       <Stack.Screen name="CartScreen" component={CartScreen} options={{ 
-    headerShown: true, 
-    title: 'Giỏ Hàng', 
-  }}  />
+        headerShown: true,
+        title: 'Giỏ Hàng',
+      }}  />
       <Stack.Screen
             name="HomeTabs"
             component={MyTabs}

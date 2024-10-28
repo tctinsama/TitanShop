@@ -21,6 +21,87 @@ connection.connect((err) => {
     if (err) throw err;
     console.log('Kết nối tới MySQL thành công');
 });
+//src/server/server.js
+// Express.js route
+app.post('/api/reset-password', async (req, res) => {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        return res.status(404).send("Email không tồn tại.");
+    }
+
+    const token = generateResetToken(user); // Tạo token khôi phục
+    await sendEmail(user.email, token); // Gửi email khôi phục
+
+    res.send("Email khôi phục mật khẩu đã được gửi!");
+});
+
+// API để khôi phục mật khẩu
+app.post('/api/reset-password/:token', async (req, res) => {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    const user = verifyResetToken(token); // Kiểm tra token
+    user.password = hashPassword(password); // Mã hóa mật khẩu mới
+    await user.save();
+
+    res.send("Mật khẩu đã được khôi phục thành công!");
+});
+
+// API đăng ký
+app.post('/register', (req, res) => {
+    const { username, password, fullname, phonenumber, address, email, dayofbirth } = req.body;
+    console.log('Received data:', req.body);
+    // Kiểm tra xem tên người dùng đã tồn tại hay chưa
+    connection.query('SELECT * FROM user WHERE username = ?', [username], (error, results) => {
+        if (error) {
+            console.error('Error querying database for existing user:', error);
+            return res.status(500).json({ success: false, message: 'Có lỗi xảy ra' });
+        }
+
+        if (results.length > 0) {
+            return res.json({ success: false, message: 'Tên người dùng đã tồn tại' });
+        }
+
+        // Tạo người dùng mới
+        const newUser = {
+            userid: null, // NULL nếu bạn đang sử dụng AUTO_INCREMENT trong cơ sở dữ liệu
+            username,
+            password,
+            fullname,
+            phonenumber,
+            address,
+            email,
+            dayofbirth,
+            img: null, // Bạn có thể để NULL hoặc một giá trị mặc định
+            status: 1, // 1 có thể biểu thị tài khoản đang hoạt động
+        };
+
+        connection.query('INSERT INTO user SET ?', newUser, (err, result) => {
+            if (err) {
+                console.error('Error inserting new user:', err);
+                return res.status(500).json({ success: false, message: 'Có lỗi xảy ra khi đăng ký' });
+            }
+
+            const newRole = {
+                roleid: null, // NULL nếu bạn đang sử dụng AUTO_INCREMENT
+                rolename: 'customer',
+                approval: 1,
+                userid: result.insertId, // Lấy userid vừa được tạo
+            };
+
+            connection.query('INSERT INTO role SET ?', newRole, (err) => {
+                if (err) {
+                    return res.status(500).json({ success: false, message: 'Có lỗi xảy ra khi phân quyền' });
+                }
+
+                return res.json({ success: true, message: 'Đăng ký thành công' });
+            });
+        });
+    });
+});
+
 
 // API đăng nhập
 app.post('/login', (req, res) => {

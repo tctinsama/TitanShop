@@ -5,19 +5,38 @@ import { register } from '../services/authService';
 const Register = ({ navigation }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [fullname, setFullname] = useState('');
+    const [phonenumber, setPhonenumber] = useState('');
+    const [address, setAddress] = useState('');
     const [email, setEmail] = useState('');
+    const [dayofbirth, setDayofbirth] = useState('');
 
     const handleRegister = async () => {
+        // Kiểm tra xem tất cả các trường đã được điền hay chưa
+        if (!username || !password || !fullname || !phonenumber || !email || !dayofbirth) {
+            Alert.alert('Error', 'Please fill in all fields');
+            return;
+        }
+
         try {
-            const response = await register(username, password, email);
+            const response = await register({
+                username,
+                password,
+                fullname,
+                phonenumber,
+                address,
+                email,
+                dayofbirth,
+            });
+
             if (response.success) {
                 Alert.alert('Success', 'Account created successfully');
                 navigation.navigate('Login');
             } else {
-                Alert.alert('Error', response.message);
+                Alert.alert('Error', response.message || 'Registration failed');
             }
         } catch (error) {
-            Alert.alert('Error', error.message);
+            Alert.alert('Error', error.message || 'An unknown error occurred');
         }
     };
 
@@ -32,9 +51,35 @@ const Register = ({ navigation }) => {
             />
             <TextInput
                 style={styles.input}
+                placeholder="Full Name"
+                value={fullname}
+                onChangeText={setFullname}
+            />
+            <TextInput
+                style={styles.input}
+                placeholder="Phone Number"
+                value={phonenumber}
+                onChangeText={setPhonenumber}
+                keyboardType="numeric"
+            />
+            <TextInput
+                style={styles.input}
+                placeholder="Address"
+                value={address}
+                onChangeText={setAddress}
+            />
+            <TextInput
+                style={styles.input}
                 placeholder="Email"
                 value={email}
                 onChangeText={setEmail}
+                keyboardType="email-address"
+            />
+            <TextInput
+                style={styles.input}
+                placeholder="Date of Birth (YYYY-MM-DD)"
+                value={dayofbirth}
+                onChangeText={setDayofbirth}
             />
             <TextInput
                 style={styles.input}

@@ -9,16 +9,19 @@ import { useNavigation } from '@react-navigation/native';
 
 const Profile = () => {
     const navigation = useNavigation();
-    const { userId } = useUser(); // Dùng userId từ context
-    const [fullname, setFullname] = useState(''); // Tạo state để lưu fullname
+    const { userId } = useUser();  // Lấy userId từ context
+    const [fullname, setFullname] = useState('');
+    const [role, setRole] = useState('');  // State lưu rolename
 
-    // Lấy fullname từ AsyncStorage khi mở trang Profile
+    // Lấy fullname và rolename từ AsyncStorage
     useEffect(() => {
-        const fetchFullname = async () => {
+        const fetchUserInfo = async () => {
             const name = await AsyncStorage.getItem('fullname');
-            setFullname(name || 'Không rõ'); // Nếu không có thì hiển thị 'Không rõ'
+            const rolename = await AsyncStorage.getItem('rolename');
+            setFullname(name || 'Không rõ');
+            setRole(rolename || '');
         };
-        fetchFullname();
+        fetchUserInfo();
     }, []);
 
     const avatarUri = Image.resolveAssetSource(require('../../../assets/images/avt.png')).uri;
@@ -48,6 +51,8 @@ const Profile = () => {
 
     return (
         <ScrollView style={styles.container}>
+
+
             <View style={styles.profileHeader}>
                 {/* Avatar người dùng */}
                 <Image
@@ -57,7 +62,15 @@ const Profile = () => {
                 />
                 {/* Hiển thị tên người dùng */}
                 <Text style={styles.username}>{fullname || 'Không rõ'}</Text>
-
+                {/* Nút Shop của tôi (chỉ hiện nếu role là client) */}
+                   {role === 'client' && (
+                       <TouchableOpacity
+                           style={styles.shopButton}
+                           onPress={() => navigation.navigate('ShopManagement')}
+                       >
+                           <Text style={styles.shopButtonText}>Shop của tôi</Text>
+                       </TouchableOpacity>
+                   )}
             </View>
 
             {/* Đơn Mua */}

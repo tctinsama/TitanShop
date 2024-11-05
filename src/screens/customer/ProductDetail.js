@@ -1,16 +1,54 @@
-// src/components/ProductDetail.js
-import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { useUser } from '../context/UserContext'; // Import useUser để sử dụng userId
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Alert} from 'react-native';
+import { useUser } from '../../context/UserContext';
 import { API_URL } from '@env';
+import { Picker } from '@react-native-picker/picker';
+
 
 const ProductDetail = ({ route }) => {
     const { product } = route.params;
-    const { userId } = useUser(); // Lấy userId từ UserContext
-    
+    const { userId } = useUser();
+
+    const [sizes, setSizes] = useState([]);
+    const [colors, setColors] = useState([]);
+    const [selectedSize, setSelectedSize] = useState(null);
+    const [selectedColor, setSelectedColor] = useState(null);
+
+    useEffect(() => {
+        // Fetch available sizes and colors for this product
+        const fetchAttributes = async () => {
+            try {
+                const response = await fetch(`${API_URL}/api/products/${product.id}/attributes`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const uniqueSizes = [...new Set(data.attributes.map(attr => attr.size))];
+                    const uniqueColors = [...new Set(data.attributes.map(attr => attr.color))];
+
+                    setSizes(uniqueSizes);
+                    setColors(uniqueColors);
+
+                    setSelectedSize(uniqueSizes[0]); // Default to first size
+                    setSelectedColor(uniqueColors[0]); // Default to first color
+                } else {
+                    Alert.alert('Lỗi', data.message || 'Không thể tải thuộc tính sản phẩm');
+                }
+            } catch (error) {
+                Alert.alert('Lỗi', 'Không thể kết nối đến server');
+            }
+        };
+
+        fetchAttributes();
+    }, [product.id]);
+
     const handleAddToCart = async () => {
         if (!userId) {
             Alert.alert('Thông báo', 'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng');
+            return;
+        }
+
+        if (!selectedSize || !selectedColor) {
+            Alert.alert('Thông báo', 'Vui lòng chọn kích thước và màu sắc trước khi thêm vào giỏ hàng');
             return;
         }
 
@@ -21,14 +59,16 @@ const ProductDetail = ({ route }) => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    userid: userId, // Sử dụng userId từ UserContext
+                    userid: userId,
                     productid: product.id,
                     cartquantity: 1,
+                    size: selectedSize,
+                    color: selectedColor,
                 }),
             });
-    
+
             const data = await response.json();
-    
+
             if (response.ok) {
                 Alert.alert('Thông báo', 'Thêm sản phẩm vào giỏ hàng thành công');
             } else {
@@ -51,14 +91,32 @@ const ProductDetail = ({ route }) => {
                 <Text style={styles.productPrice}>${product.price}</Text>
                 <Text style={styles.productDescription}>{product.productdes}</Text>
 
-                <View style={styles.infoContainer}>
+                {/* Size Picker */}
+                <View style={styles.pickerContainer}>
                     <Text style={styles.infoTitle}>Size:</Text>
-                    <Text style={styles.infoValue}>{product.size || 'M'}</Text>
+                    <Picker
+                        selectedValue={selectedSize}
+                        style={styles.picker}
+                        onValueChange={(itemValue) => setSelectedSize(itemValue)}
+                    >
+                        {sizes.map((size, index) => (
+                            <Picker.Item key={index} label={size} value={size} />
+                        ))}
+                    </Picker>
                 </View>
 
-                <View style={styles.infoContainer}>
+                {/* Color Picker */}
+                <View style={styles.pickerContainer}>
                     <Text style={styles.infoTitle}>Color:</Text>
-                    <Text style={styles.infoValue}>{product.color || 'Black'}</Text>
+                    <Picker
+                        selectedValue={selectedColor}
+                        style={styles.picker}
+                        onValueChange={(itemValue) => setSelectedColor(itemValue)}
+                    >
+                        {colors.map((color, index) => (
+                            <Picker.Item key={index} label={color} value={color} />
+                        ))}
+                    </Picker>
                 </View>
 
                 <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
@@ -103,20 +161,18 @@ const styles = StyleSheet.create({
         lineHeight: 22,
         marginBottom: 16,
     },
-    infoContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+    pickerContainer: {
         marginBottom: 8,
     },
     infoTitle: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#333',
+        marginBottom: 4,
     },
-    infoValue: {
-        fontSize: 16,
-        color: '#666',
+    picker: {
+        height: 50,
+        width: '100%',
     },
     addToCartButton: {
         backgroundColor: '#E91E63',

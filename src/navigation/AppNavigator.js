@@ -1,6 +1,7 @@
 //src/navigation/AppNavigator.js
 import React, { useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
 import Login from '../screens/Login';
 import Register from '../screens/Register';
 import ForgotPassword from '../screens/ForgotPassword';
@@ -11,30 +12,35 @@ import CheckoutScreen from '../screens/customer/CheckoutScreen';
 import OrderSuccess from '../screens/customer/OrderSuccess';
 import SearchResult from '../screens/customer/SearchResult';
 import CategoryScreen from '../screens/customer/CategoryScreen';
+import ShopManagement from '../screens/client/ShopManagement';
 
 
 
 
 const Stack = createNativeStackNavigator();
 
+
+
+
 const AppNavigator = () => {
   const [userId, setUserId] = useState(null);
+
 
 //src/navigation/AppNavigator.js
   return (
     <Stack.Navigator initialRouteName="Login">
       <Stack.Screen name="Login">
-        {props => <Login {...props} setUserId={setUserId} />} 
+        {props => <Login {...props} setUserId={setUserId} />}
       </Stack.Screen>
       <Stack.Screen name="Register" component={Register} />
       <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
       <Stack.Screen name="ProductDetail" component={ProductDetail} />
       <Stack.Screen name="SearchResult" component={SearchResult} options={{ headerShown: false }}/>
       <Stack.Screen name="CategoryScreen" component={CategoryScreen} options={{ headerShown: false }}/>
-      <Stack.Screen name="CartScreen" component={CartScreen} options={{ 
-    headerShown: true, 
-    title: 'Giỏ Hàng', 
-  }}  />
+      <Stack.Screen name="CartScreen" component={CartScreen} options={{
+        headerShown: true,
+        title: 'Giỏ Hàng',
+      }}  />
       <Stack.Screen
             name="HomeTabs"
             component={MyTabs}
@@ -42,6 +48,8 @@ const AppNavigator = () => {
           />
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="OrderSuccess" component={OrderSuccess} />
+      <Stack.Screen name="ShopManagement" component={ShopManagement} />
+
 
     </Stack.Navigator>
   );

@@ -1,3 +1,4 @@
+//src/screens/customer/CategoryScreen.js
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, View, TextInput, Image, StyleSheet, ScrollView, TouchableOpacity, Text } from "react-native";
 import { useNavigation, useRoute } from '@react-navigation/native';

@@ -5,6 +5,8 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import HomeScreen from '../screens/customer/HomeScreen';  
 import NotificationsScreen from '../screens/customer/NotificationsScreen';  
 import CartScreen from '../screens/customer/CartScreen';  
+import Profile from '../screens/customer/Profile';
+
 
 const Tab = createMaterialBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -56,15 +58,15 @@ function MyTabs({ userId }) {
         }}
       />
       <Tab.Screen
-        name="Notifications"
-        component={NotificationsScreen}
-        initialParams={{ userId }} 
-        options={{
-          tabBarLabel: 'Notifications',
-          tabBarIcon: ({ color }) => renderIcon("bell", color),
-        }}
-      />
-    </Tab.Navigator>
+          name="Profile"
+          component={Profile}
+          initialParams={{ userId }}
+          options={{
+            tabBarLabel: 'Profile',
+            tabBarIcon: ({ color }) => renderIcon("account", color), // Cập nhật biểu tượng cho Profile
+          }}
+        />
+      </Tab.Navigator>
   );
 }
 

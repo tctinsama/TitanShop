@@ -21,7 +21,11 @@ const Login = ({ navigation }) => {
             const user = await login(username, password);
             if (user.success) {
                 await AsyncStorage.setItem('userid', String(user.userid));
+                await AsyncStorage.setItem('fullname', user.fullname);
+                await AsyncStorage.setItem('rolename', user.rolename);  // Thêm rolename
+
                 setUserId(user.userid); // Cập nhật userId trong context
+
                 navigation.replace(user.rolename === 'admin' ? 'AdHome' : 'HomeTabs');
             } else {
                 Alert.alert('Error', user.message);

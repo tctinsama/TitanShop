@@ -79,24 +79,24 @@ const CartScreen = () => {
 
     const renderCartItem = ({ item }) => (
         <View style={styles.cartItem}>
-            <Image 
-                source={{ uri: `data:image/jpeg;base64,${item.productImage}` }} 
-                style={styles.productImage} 
-                resizeMode="cover" 
+            <Image
+                source={{ uri: `data:image/jpeg;base64,${item.productImage}` }}
+                style={styles.productImage}
+                resizeMode="cover"
             />
             <View style={styles.productDetails}>
                 <Text style={styles.productName}>{item.productName}</Text>
                 <Text style={styles.productPrice}>${item.productPrice}</Text>
                 <View style={styles.quantityContainer}>
-                    <TouchableOpacity 
-                        style={styles.quantityButton} 
+                    <TouchableOpacity
+                        style={styles.quantityButton}
                         onPress={() => handleUpdateQuantity(item.cartid, item.cartquantity - 1)}
                     >
                         <Text style={styles.quantityButtonText}>-</Text>
                     </TouchableOpacity>
                     <Text style={styles.productQuantity}>{item.cartquantity}</Text>
-                    <TouchableOpacity 
-                        style={styles.quantityButton} 
+                    <TouchableOpacity
+                        style={styles.quantityButton}
                         onPress={() => handleUpdateQuantity(item.cartid, item.cartquantity + 1)}
                     >
                         <Text style={styles.quantityButtonText}>+</Text>

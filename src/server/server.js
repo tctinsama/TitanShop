@@ -173,7 +173,7 @@ app.get('/cart/:userid', (req, res) => {
         SELECT p.productid, p.name AS name, p.price AS productPrice, c.cartquantity, p.image AS productImage, c.cartid
         FROM cart c
         JOIN product p ON c.productid = p.productid
-        WHERE c.userid = ? AND c.status = 'active' 
+        WHERE c.userid = ? AND c.status = 'active'
     `;
 
     connection.query(query, [userid], (error, results) => {
@@ -469,6 +469,22 @@ app.get('/api/products/category/:categoryId', (req, res) => {
         }));
 
         res.json(cleanedResults); // Trả về danh sách sản phẩm theo danh mục
+    });
+});
+
+
+// API LẤY COLOR AND SIZE
+app.get('/api/products/:productId/attributes', (req, res) => {
+    const { productId } = req.params;
+
+    const query = `SELECT DISTINCT size, color FROM quantity WHERE productid = ?`;
+    connection.query(query, [productId], (error, results) => {
+        if (error) {
+            console.error('Error fetching product attributes:', error);
+            return res.status(500).json({ success: false, message: 'Error fetching product attributes' });
+        }
+
+        res.json({ success: true, attributes: results });
     });
 });
 

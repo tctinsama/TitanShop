@@ -392,6 +392,22 @@ app.get('/api/products/category/:categoryId', (req, res) => {
 });
 
 
+// API LẤY COLOR AND SIZE
+app.get('/api/products/:productId/attributes', (req, res) => {
+    const { productId } = req.params;
+
+    const query = `SELECT DISTINCT size, color FROM quantity WHERE productid = ?`;
+    connection.query(query, [productId], (error, results) => {
+        if (error) {
+            console.error('Error fetching product attributes:', error);
+            return res.status(500).json({ success: false, message: 'Error fetching product attributes' });
+        }
+        
+        res.json({ success: true, attributes: results });
+    });
+});
+
+
 // Bắt đầu lắng nghe server
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);

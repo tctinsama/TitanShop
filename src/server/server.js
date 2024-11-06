@@ -166,14 +166,16 @@ app.get('/categories', (req, res) => {
     });
 });
 
+
 // API tải giỏ hàng
-app.get('/cart/:userid', (req, res) => {
-    const userid = req.params.userid;
+app.get('/api/cart/:userid', (req, res) => {
+    const { userid } = req.params;
     const query = `
-        SELECT p.productid, p.name AS name, p.price AS productPrice, c.cartquantity, p.image AS productImage, c.cartid
-        FROM cart c
-        JOIN product p ON c.productid = p.productid
-        WHERE c.userid = ? AND c.status = 'active' 
+        SELECT ci.cartitemid, p.productid, p.name, ci.size, ci.color, ci.price, ci.quantity, p.image
+        FROM cartitem ci
+        JOIN product p ON ci.productid = p.productid
+        JOIN cart c ON ci.cartid = c.cartid
+        WHERE c.userid = ? AND c.status = 1;
     `;
 
     connection.query(query, [userid], (error, results) => {
@@ -182,13 +184,14 @@ app.get('/cart/:userid', (req, res) => {
             return res.status(500).json({ success: false, message: 'Có lỗi xảy ra khi tải giỏ hàng' });
         }
 
-        // Chuyển đổi hình ảnh từ Buffer sang base64 nếu có giá trị
-        const cleanedResults = results.map(item => {
-            return {
-                ...item,
-                productImage: item.productImage ? item.productImage.toString('base64') : null
-            };
-        });
+        if (results.length === 0) {
+            return res.status(404).json({ success: false, message: 'Giỏ hàng của bạn trống' });
+        }
+
+        const cleanedResults = results.map(item => ({
+            ...item,
+            image: item.image ? item.image.toString('base64') : null,
+        }));
 
         res.json({ success: true, cartItems: cleanedResults });
     });
@@ -196,58 +199,136 @@ app.get('/cart/:userid', (req, res) => {
 
 // API thêm sản phẩm vào giỏ hàng
 app.post('/api/cart/add', (req, res) => {
-    const { userid, productid, cartquantity } = req.body;
-    const status = 'active'; // Trạng thái của sản phẩm trong giỏ hàng khi thêm vào
-    const query = 'INSERT INTO cart (userid, productid, cartquantity, status) VALUES (?, ?, ?, ?)';
+    const { userid, productid, size, color, quantity, price } = req.body;
 
-    connection.query(query, [userid, productid, cartquantity, status], (error, results) => {
-        if (error) {
-            console.error('Error while adding product to cart:', error);
-
-            return res.status(500).json({ message: 'Lỗi khi thêm sản phẩm vào giỏ hàng', error });
+    // Kiểm tra nếu người dùng đã có giỏ hàng chưa
+    const cartQuery = 'SELECT cartid FROM cart WHERE userid = ? AND status = 1';
+    connection.query(cartQuery, [userid], (cartError, cartResults) => {
+        if (cartError) {
+            console.error('Error while checking cart:', cartError);
+            return res.status(500).json({ message: 'Lỗi khi kiểm tra giỏ hàng', cartError });
         }
-        res.status(200).json({ message: 'Thêm sản phẩm vào giỏ hàng thành công', cartId: results.insertId });
+
+        let cartid;
+        if (cartResults.length > 0) {
+            cartid = cartResults[0].cartid;
+            checkProductInCart(cartid);
+        } else {
+            // Tạo giỏ hàng mới nếu chưa có
+            const newCartQuery = 'INSERT INTO cart (userid, status) VALUES (?, 1)';
+            connection.query(newCartQuery, [userid], (newCartError, newCartResults) => {
+                if (newCartError) {
+                    console.error('Error while creating new cart:', newCartError);
+                    return res.status(500).json({ message: 'Lỗi khi tạo giỏ hàng mới', newCartError });
+                }
+                cartid = newCartResults.insertId;
+                addItemToCart(cartid);
+            });
+        }
     });
+
+    // Kiểm tra nếu sản phẩm đã có trong giỏ hàng
+    function checkProductInCart(cartid) {
+        const checkQuery = 'SELECT * FROM cartitem WHERE cartid = ? AND productid = ? AND size = ? AND color = ?';
+        connection.query(checkQuery, [cartid, productid, size, color], (error, results) => {
+            if (error) {
+                console.error('Error checking product in cart:', error);
+                return res.status(500).json({ message: 'Lỗi kiểm tra sản phẩm trong giỏ hàng', error });
+            }
+
+            if (results.length > 0) {
+                // Nếu sản phẩm đã có, cập nhật số lượng
+                const updatedQuantity = results[0].quantity + quantity;
+                updateProductInCart(results[0].cartitemid, updatedQuantity);
+            } else {
+                addItemToCart(cartid);
+            }
+        });
+    }
+
+    // Thêm sản phẩm vào giỏ hàng
+    function addItemToCart(cartid) {
+        const query = `
+            INSERT INTO cartitem (cartid, productid, size, color, quantity, price, status) 
+            VALUES (?, ?, ?, ?, ?, ?, 1)
+        `;
+        connection.query(query, [cartid, productid, size, color, quantity, price], (error, results) => {
+            if (error) {
+                console.error('Error while adding product to cart:', error);
+                return res.status(500).json({ message: 'Lỗi khi thêm sản phẩm vào giỏ hàng', error });
+            }
+            res.status(200).json({ message: 'Thêm sản phẩm vào giỏ hàng thành công', cartItemId: results.insertId });
+        });
+    }
+
+    // Cập nhật số lượng sản phẩm trong giỏ hàng
+    function updateProductInCart(cartitemid, updatedQuantity) {
+        const updateQuery = 'UPDATE cartitem SET quantity = ? WHERE cartitemid = ?';
+        connection.query(updateQuery, [updatedQuantity, cartitemid], (error, results) => {
+            if (error) {
+                console.error('Error while updating product in cart:', error);
+                return res.status(500).json({ message: 'Lỗi khi cập nhật sản phẩm trong giỏ hàng', error });
+            }
+            res.status(200).json({ message: 'Cập nhật sản phẩm vào giỏ hàng thành công', cartItemId: cartitemid });
+        });
+    }
 });
 
 // API cập nhật số lượng sản phẩm trong giỏ hàng
-app.put('/api/cart/update/:cartid', (req, res) => {
-    const { cartid } = req.params;
+app.put('/api/cart/update/:cartitemid', (req, res) => {
+    const { cartitemid } = req.params;
     const { cartquantity } = req.body;
 
-    const query = 'UPDATE cart SET cartquantity = ? WHERE cartid = ? AND status = "active"';
+    console.log('Update request received for cart item:', cartitemid, 'with quantity:', cartquantity);
 
-    connection.query(query, [cartquantity, cartid], (error, results) => {
+    // Kiểm tra nếu `cartquantity` không hợp lệ
+    if (!cartquantity || isNaN(cartquantity) || cartquantity <= 0) {
+        console.error('Invalid quantity:', cartquantity);
+        return res.status(400).json({ message: 'Số lượng không hợp lệ' });
+    }
+
+    const query = 'UPDATE cartitem SET quantity = ? WHERE cartitemid = ? AND status = 1';
+
+    connection.query(query, [cartquantity, cartitemid], (error, results) => {
         if (error) {
             console.error('Error while updating cart quantity:', error);
+            // Đảm bảo trả về phản hồi JSON khi có lỗi
             return res.status(500).json({ message: 'Lỗi khi cập nhật số lượng sản phẩm trong giỏ hàng', error });
         }
 
         if (results.affectedRows === 0) {
+            console.error('No item found to update for cart item:', cartitemid);
             return res.status(404).json({ message: 'Không tìm thấy sản phẩm để cập nhật' });
         }
 
+        console.log('Successfully updated cart item:', cartitemid);
+        // Đảm bảo trả về phản hồi JSON khi cập nhật thành công
         res.status(200).json({ message: 'Cập nhật số lượng sản phẩm thành công' });
     });
 });
 
+
+
 // API xóa sản phẩm khỏi giỏ hàng
-app.delete('/api/cart/remove/:cartid', (req, res) => {
-    const { cartid } = req.params;
-    const query = 'DELETE FROM cart WHERE cartid = ?';
+app.delete('/api/cart/remove/:cartitemid', (req, res) => {
+    const { cartitemid } = req.params;
 
-    connection.query(query, [cartid], (error, results) => {
+    const deleteQuery = 'DELETE FROM cartitem WHERE cartitemid = ?';
+    connection.query(deleteQuery, [cartitemid], (error, results) => {
         if (error) {
-            console.error('Error while adding product to cart:', error);
-
+            console.error('Error while deleting cart item:', error);
             return res.status(500).json({ message: 'Lỗi khi xóa sản phẩm khỏi giỏ hàng', error });
         }
+
         if (results.affectedRows === 0) {
             return res.status(404).json({ message: 'Không tìm thấy sản phẩm để xóa' });
         }
+
         res.status(200).json({ message: 'Xóa sản phẩm khỏi giỏ hàng thành công' });
     });
 });
+
+
 
 // POST: Tạo đơn hàng
 //src/server/server.js
@@ -483,7 +564,7 @@ app.get('/api/products/:productId/attributes', (req, res) => {
             console.error('Error fetching product attributes:', error);
             return res.status(500).json({ success: false, message: 'Error fetching product attributes' });
         }
-        
+
         res.json({ success: true, attributes: results });
     });
 });

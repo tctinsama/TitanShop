@@ -16,7 +16,7 @@ const ProductList = () => {
         if (Array.isArray(response.data)) {
           const filteredProducts = response.data.map(product => ({
             id: product.productid,
-            name: product.productName || "No name available",
+            name: product.name || "No name available",
             productdes: product.productdes || "No description available",
             image: product.image ? `data:image/png;base64,${product.image}` : 'https://i.imgur.com/1tMFzp8.png',
             price: product.price != null ? product.price : 0,

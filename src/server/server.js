@@ -171,11 +171,18 @@ app.get('/categories', (req, res) => {
 app.get('/api/cart/:userid', (req, res) => {
     const { userid } = req.params;
     const query = `
+<<<<<<< HEAD
         SELECT ci.cartitemid, p.productid, p.name, ci.size, ci.color, ci.price, ci.quantity, p.image
         FROM cartitem ci
         JOIN product p ON ci.productid = p.productid
         JOIN cart c ON ci.cartid = c.cartid
         WHERE c.userid = ? AND c.status = 1;
+=======
+        SELECT p.productid, p.name AS name, p.price AS productPrice, c.cartquantity, p.image AS productImage, c.cartid
+        FROM cart c
+        JOIN product p ON c.productid = p.productid
+        WHERE c.userid = ? AND c.status = 'active'
+>>>>>>> 36b9252939ba54a79a0784257f73457cc991e550
     `;
 
     connection.query(query, [userid], (error, results) => {

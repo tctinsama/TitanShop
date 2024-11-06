@@ -10,21 +10,21 @@ const ProductItem = ({ product }) => {
     // Kiểm tra nếu product.image tồn tại và không rỗng
     const hasImage = product.image && product.image.length > 0;
     const isBase64 = product.image.startsWith('data:image/png;base64,');
-    const imageUrl = hasImage && !isBase64 
-        ? `data:image/png;base64,${product.image}` 
-        : hasImage 
+    const imageUrl = hasImage && !isBase64
+        ? `data:image/png;base64,${product.image}`
+        : hasImage
         ? product.image
         : 'https://example.com/default-image.png';
 
     return (
-        <TouchableOpacity 
-            style={styles.container} 
+        <TouchableOpacity
+            style={styles.container}
             onPress={() => navigation.navigate('ProductDetail', { product })}
         >
-            <Image 
-                source={{ uri: imageUrl }} 
-                style={styles.image} 
-                resizeMode="cover" 
+            <Image
+                source={{ uri: imageUrl }}
+                style={styles.image}
+                resizeMode="cover"
             />
             <Text style={styles.productName}>{product.name}</Text>
             <Text style={styles.productDescription}>{product.productdes}</Text>

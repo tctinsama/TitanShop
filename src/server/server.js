@@ -171,18 +171,13 @@ app.get('/categories', (req, res) => {
 app.get('/api/cart/:userid', (req, res) => {
     const { userid } = req.params;
     const query = `
-<<<<<<< HEAD
+
         SELECT ci.cartitemid, p.productid, p.name, ci.size, ci.color, ci.price, ci.quantity, p.image
         FROM cartitem ci
         JOIN product p ON ci.productid = p.productid
         JOIN cart c ON ci.cartid = c.cartid
         WHERE c.userid = ? AND c.status = 1;
-=======
-        SELECT p.productid, p.name AS name, p.price AS productPrice, c.cartquantity, p.image AS productImage, c.cartid
-        FROM cart c
-        JOIN product p ON c.productid = p.productid
-        WHERE c.userid = ? AND c.status = 'active'
->>>>>>> 36b9252939ba54a79a0784257f73457cc991e550
+
     `;
 
     connection.query(query, [userid], (error, results) => {
@@ -578,7 +573,7 @@ app.get('/api/products/:productId/attributes', (req, res) => {
 
 
 // API lấy sản phẩm cho cửa hàng
-
+//src/server/server.js
 app.get('/api/shop/products', (req, res) => {
     const { userId } = req.query;
     console.log('Received user ID:', userId); // Log userId nhận được
@@ -606,8 +601,103 @@ app.get('/api/shop/products', (req, res) => {
     });
 });
 
+//src/server/server.js
+app.get('/api/shop/orders', (req, res) => {
+    const { userId } = req.query;
+
+    if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    // Câu query để đếm số lượng đơn hàng theo các trạng thái khác nhau
+    const query = `
+        SELECT
+            SUM(CASE WHEN o.orderstatusid = 1 THEN 1 ELSE 0 END) AS pendingConfirmation,
+            SUM(CASE WHEN o.orderstatusid = 2 THEN 1 ELSE 0 END) AS pendingPickup,
+            SUM(CASE WHEN o.orderstatusid = 3 THEN 1 ELSE 0 END) AS shipping,
+            SUM(CASE WHEN o.orderstatusid = 4 THEN 1 ELSE 0 END) AS delivered
+        FROM \`orderdetails\` od
+        INNER JOIN \`product\` p ON od.productid = p.productid
+        INNER JOIN \`order\` o ON od.ordercode = o.ordercode
+        WHERE p.userid = ?
+    `;
+
+    connection.query(query, [userId], (error, results) => {
+        if (error) {
+            return res.status(500).json({ error: 'An error occurred while fetching order stats' });
+        }
+
+        res.json(results[0]);
+    });
+});
 
 
+// API lấy danh sách đơn hàng theo trạng thái
+app.get('/api/shop/orders/status', (req, res) => {
+    const { userId, orderStatusId } = req.query;
+
+    // Kiểm tra đầu vào
+    if (!userId || !orderStatusId) {
+        return res.status(400).json({ error: 'Both User ID and Order Status ID are required.' });
+    }
+
+    // Kiểm tra dữ liệu đầu vào có hợp lệ không (tránh SQL Injection)
+    if (isNaN(userId) || isNaN(orderStatusId)) {
+        return res.status(400).json({ error: 'User ID and Order Status ID must be valid numbers.' });
+    }
+
+    // Truy vấn SQL để lấy đơn hàng theo trạng thái và người bán (client)
+    const query = `
+        SELECT o.ordercode, o.orderdate, o.total, o.name, o.phonenumber, o.address, o.orderstatusid
+        FROM \`orderdetails\` od
+        INNER JOIN \`product\` p ON od.productid = p.productid
+        INNER JOIN \`order\` o ON od.ordercode = o.ordercode
+        WHERE p.userid = ? AND o.orderstatusid = ?
+    `;
+
+    // Thực hiện truy vấn
+    connection.query(query, [userId, orderStatusId], (error, results) => {
+        if (error) {
+            console.error("Error executing query:", error);  // Log lỗi nếu có
+            return res.status(500).json({ error: 'An error occurred while fetching orders' });
+        }
+//        console.log("Orders fetched from DB:", results);  // Log kết quả từ DB
+        res.json(results);  // Trả về kết quả đơn hàng
+
+    });
+});
+
+// API cập nhật trạng thái đơn hàng
+app.put('/api/shop/orders/confirm', (req, res) => {
+  const { orderCode, newStatus } = req.body;
+
+  // Kiểm tra đầu vào
+  if (!orderCode || !newStatus) {
+    return res.status(400).json({ error: 'Order code and new status are required.' });
+  }
+
+  // Kiểm tra dữ liệu đầu vào có hợp lệ không
+  if (isNaN(orderCode) || isNaN(newStatus)) {
+    return res.status(400).json({ error: 'Order code and new status must be valid numbers.' });
+  }
+
+  // Cập nhật trạng thái đơn hàng trong cơ sở dữ liệu
+  const query = `
+    UPDATE \`order\`
+    SET orderstatusid = ?
+    WHERE ordercode = ?
+  `;
+
+  connection.query(query, [newStatus, orderCode], (error, results) => {
+    if (error) {
+      console.error("Error updating order status:", error);
+      return res.status(500).json({ error: 'An error occurred while updating order status' });
+    }
+
+    // Trả về thông báo thành công
+    res.status(200).json({ message: 'Order status updated successfully' });
+  });
+});
 
 // Bắt đầu lắng nghe server
 app.listen(port, () => {

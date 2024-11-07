@@ -109,6 +109,18 @@ const Profile = () => {
                 </TouchableOpacity>
             </View>
 
+        {/* Tiện ích */}
+        <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Tiện ích</Text>
+            {/* Kiểm tra nếu rolename là 'customer' thì mới hiển thị mục dưới đây */}
+            {role === 'customer' && (
+                <TouchableOpacity style={styles.supportItem}>
+                    <Ionicons name="help-circle-outline" size={24} color="#007BFF" />
+                    <Text style={styles.supportText}>Đăng kí trở thành nhà bán hàng</Text>
+                </TouchableOpacity>
+            )}
+        </View>
+
 
             <TouchableOpacity style={styles.logoutButton} onPress={confirmLogout}>
                 <Text style={styles.logoutButtonText}>Đăng Xuất</Text>

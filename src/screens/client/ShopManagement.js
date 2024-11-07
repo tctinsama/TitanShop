@@ -39,7 +39,7 @@ const ShopManagement = () => {
   };
 
   const navigateToShop = () => {
-    navigation.navigate('ShopDetail'); // Thay đổi 'ShopDetail' thành tên màn hình hiển thị chi tiết shop
+    navigation.navigate('ShopDetail'); // Điều hướng tới ShopDetail khi ấn vào "Xem Shop"
   };
 
   return (

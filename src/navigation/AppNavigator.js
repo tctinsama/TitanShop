@@ -13,6 +13,8 @@ import OrderSuccess from '../screens/customer/OrderSuccess';
 import SearchResult from '../screens/customer/SearchResult';
 import CategoryScreen from '../screens/customer/CategoryScreen';
 import ShopManagement from '../screens/client/ShopManagement';
+import ShopDetail from '../screens/client/ShopDetail';
+import AddProduct from '../screens/client/AddProduct';
 
 
 
@@ -49,6 +51,8 @@ const AppNavigator = () => {
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="OrderSuccess" component={OrderSuccess} />
       <Stack.Screen name="ShopManagement" component={ShopManagement} />
+      <Stack.Screen name="ShopDetail" component={ShopDetail} />
+      <Stack.Screen name="AddProduct" component={AddProduct} />
 
 
     </Stack.Navigator>

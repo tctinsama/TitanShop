@@ -489,6 +489,38 @@ app.get('/api/products/:productId/attributes', (req, res) => {
 });
 
 
+// API lấy sản phẩm cho cửa hàng
+
+app.get('/api/shop/products', (req, res) => {
+    const { userId } = req.query;
+    console.log('Received user ID:', userId); // Log userId nhận được
+
+    if (!userId) {
+        console.error('No user ID provided');
+        return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    const query = `SELECT * FROM product WHERE userid = ? AND status = 1`;
+    connection.query(query, [userId], (error, results) => {
+        if (error) {
+//            console.error('Error fetching shop products:', error.message); // Log lỗi
+            return res.status(500).json({ error: 'An error occurred while fetching products' });
+        }
+
+        // Chuyển đổi hình ảnh từ Buffer sang chuỗi Base64
+        const products = results.map(row => ({
+            ...row,
+            image: row.image ? row.image.toString('base64') : null // Chuyển đổi Buffer thành Base64
+        }));
+
+//        console.log('Fetched products:', products); // Log sản phẩm đã lấy
+        res.json(products); // Trả về danh sách sản phẩm đã được chuyển đổi
+    });
+});
+
+
+
+
 // Bắt đầu lắng nghe server
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);

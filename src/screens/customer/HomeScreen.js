@@ -27,6 +27,7 @@ const HomeScreen = () => {
     const fetchCartQuantity = async () => {
         try {
             const response = await fetch(`${API_URL}/cart/${userId}`);
+            console.log('Fetched products:', response.data);
             const data = await response.json();
             if (response.ok) {
                 const totalQuantity = data.cartItems.reduce((sum, item) => sum + item.cartquantity, 0);

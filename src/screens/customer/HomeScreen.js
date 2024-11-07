@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { SafeAreaView, View, TextInput, Text, Image, StyleSheet, Dimensions, ScrollView, TouchableOpacity } from "react-native";
+import { SafeAreaView, View, TextInput, Text, Image, StyleSheet, Dimensions, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { useUser } from '../../context/UserContext';
 import ProductList from "../../components/ProductList";
@@ -8,7 +8,6 @@ import CategoryList from "../../components/CategoryList";
 import { useFocusEffect } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { API_URL } from '@env';
-
 
 const HomeScreen = () => {
     const images = [
@@ -23,18 +22,31 @@ const HomeScreen = () => {
     const scrollViewRef = useRef(null);
     const screenWidth = Dimensions.get("window").width;
     const navigation = useNavigation();
-  
+
     const fetchCartQuantity = async () => {
         try {
-            const response = await fetch(`${API_URL}/cart/${userId}`);
-            console.log('Fetched products:', response.data);
-            const data = await response.json();
-            if (response.ok) {
-                const totalQuantity = data.cartItems.reduce((sum, item) => sum + item.cartquantity, 0);
+            const response = await fetch(`${API_URL}/api/cart/${userId}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseText = await response.text();
+            if (responseText.startsWith('<')) {
+                console.error('HTML Response:', responseText);
+                Alert.alert('Error', 'API returned HTML instead of JSON');
+                return;
+            }
+
+            const data = JSON.parse(responseText);
+
+            if (data.success) {
+                const totalQuantity = data.cartItems.reduce((sum, item) => sum + item.quantity, 0);
                 setCartQuantity(totalQuantity);
+            } else {
+                console.error(data.message);
             }
         } catch (error) {
-            console.error('Failed to fetch cart quantity', error);
+            console.error('Failed to fetch cart quantity:', error);
         }
     };
 
@@ -81,7 +93,7 @@ const HomeScreen = () => {
                     <View style={styles.headerTitleContainer}>
                         <TouchableOpacity
                             style={styles.menuButton}
-                            onPress={() => {/* Xử lý sự kiện cho nút menu ở đây */}}
+                            onPress={() => {/* Handle menu button event here */}}
                         >
                             <MaterialCommunityIcons name="menu" size={30} color="black" />
                         </TouchableOpacity>

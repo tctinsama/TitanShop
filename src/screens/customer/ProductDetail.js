@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Alert} from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useUser } from '../../context/UserContext';
 import { API_URL } from '@env';
 import { Picker } from '@react-native-picker/picker';
-
 
 const ProductDetail = ({ route }) => {
     const { product } = route.params;
@@ -15,7 +14,7 @@ const ProductDetail = ({ route }) => {
     const [selectedColor, setSelectedColor] = useState(null);
 
     useEffect(() => {
-        // Fetch available sizes and colors for this product
+        // Fetch sizes and colors
         const fetchAttributes = async () => {
             try {
                 const response = await fetch(`${API_URL}/api/products/${product.id}/attributes`);
@@ -24,12 +23,11 @@ const ProductDetail = ({ route }) => {
                 if (data.success) {
                     const uniqueSizes = [...new Set(data.attributes.map(attr => attr.size))];
                     const uniqueColors = [...new Set(data.attributes.map(attr => attr.color))];
-
                     setSizes(uniqueSizes);
                     setColors(uniqueColors);
 
-                    setSelectedSize(uniqueSizes[0]); // Default to first size
-                    setSelectedColor(uniqueColors[0]); // Default to first color
+                    setSelectedSize(uniqueSizes[0]);
+                    setSelectedColor(uniqueColors[0]);
                 } else {
                     Alert.alert('Lỗi', data.message || 'Không thể tải thuộc tính sản phẩm');
                 }
@@ -61,9 +59,10 @@ const ProductDetail = ({ route }) => {
                 body: JSON.stringify({
                     userid: userId,
                     productid: product.id,
-                    cartquantity: 1,
+                    quantity: 1, // sửa từ cartquantity
                     size: selectedSize,
                     color: selectedColor,
+                    price: product.price, // thêm trường price
                 }),
             });
 
@@ -72,9 +71,11 @@ const ProductDetail = ({ route }) => {
             if (response.ok) {
                 Alert.alert('Thông báo', 'Thêm sản phẩm vào giỏ hàng thành công');
             } else {
+                
                 Alert.alert('Lỗi', data.message || 'Đã xảy ra lỗi khi thêm vào giỏ hàng');
             }
         } catch (error) {
+            console.log('Lỗi fetch thuộc tính:', error);
             Alert.alert('Lỗi', 'Không thể kết nối đến server');
         }
     };
@@ -128,64 +129,17 @@ const ProductDetail = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flexGrow: 1,
-        backgroundColor: '#FFFFFF',
-        padding: 16,
-    },
-    image: {
-        width: '100%',
-        height: 300,
-        borderRadius: 8,
-        marginBottom: 16,
-    },
-    detailsContainer: {
-        flex: 1,
-        backgroundColor: '#FFFFFF',
-    },
-    productName: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 8,
-        color: '#333',
-    },
-    productPrice: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: '#E91E63',
-        marginBottom: 16,
-    },
-    productDescription: {
-        fontSize: 16,
-        color: '#666',
-        lineHeight: 22,
-        marginBottom: 16,
-    },
-    pickerContainer: {
-        marginBottom: 8,
-    },
-    infoTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 4,
-    },
-    picker: {
-        height: 50,
-        width: '100%',
-    },
-    addToCartButton: {
-        backgroundColor: '#E91E63',
-        padding: 12,
-        borderRadius: 8,
-        alignItems: 'center',
-        marginTop: 16,
-    },
-    addToCartButtonText: {
-        fontSize: 16,
-        color: '#FFFFFF',
-        fontWeight: 'bold',
-    },
+    container: { flexGrow: 1, backgroundColor: '#FFFFFF', padding: 16 },
+    image: { width: '100%', height: 300, borderRadius: 8, marginBottom: 16 },
+    detailsContainer: { flex: 1, backgroundColor: '#FFFFFF' },
+    productName: { fontSize: 24, fontWeight: 'bold', marginBottom: 8, color: '#333' },
+    productPrice: { fontSize: 20, fontWeight: '600', color: '#E91E63', marginBottom: 16 },
+    productDescription: { fontSize: 16, color: '#666', lineHeight: 22, marginBottom: 16 },
+    pickerContainer: { marginBottom: 8 },
+    infoTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 4 },
+    picker: { height: 50, width: '100%' },
+    addToCartButton: { backgroundColor: '#E91E63', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 16 },
+    addToCartButtonText: { fontSize: 16, color: '#FFFFFF', fontWeight: 'bold' },
 });
 
 export default ProductDetail;

@@ -6,12 +6,15 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { useUser } from '../../context/UserContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { API_URL } from '@env';
+
 
 const Profile = () => {
     const navigation = useNavigation();
     const { userId } = useUser();  // Lấy userId từ context
     const [fullname, setFullname] = useState('');
     const [role, setRole] = useState('');  // State lưu rolename
+    const [orderCounts, setOrderCounts] = useState({ confirm: 0, pickup: 0, deliver: 0 });
 
     // Lấy fullname và rolename từ AsyncStorage
     useEffect(() => {
@@ -20,9 +23,29 @@ const Profile = () => {
             const rolename = await AsyncStorage.getItem('rolename');
             setFullname(name || 'Không rõ');
             setRole(rolename || '');
+
         };
         fetchUserInfo();
     }, []);
+
+     // Hàm lấy số lượng đơn hàng từ API
+     useEffect(() => {
+         const fetchOrderCounts = async () => {
+             try {
+                 const response = await fetch(`${API_URL}/api/order/count/${userId}`);
+                 if (!response.ok) {
+                     throw new Error(`HTTP error! Status: ${response.status}`);
+                 }
+                 const data = await response.json();
+                 setOrderCounts(data);
+             } catch (error) {
+                 console.error("Lỗi khi lấy số lượng đơn hàng:", error);
+                 Alert.alert("Lỗi", "Không thể lấy dữ liệu đơn hàng. Vui lòng thử lại sau.");
+             }
+         };
+         fetchOrderCounts();
+     }, [userId]);
+
 
     const avatarUri = Image.resolveAssetSource(require('../../../assets/images/avt.png')).uri;
 
@@ -77,22 +100,43 @@ const Profile = () => {
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Đơn Mua</Text>
                 <View style={styles.purchaseRow}>
-                    <TouchableOpacity style={styles.iconContainer}>
-                        <MaterialCommunityIcons name="clipboard-check-outline" size={32} color="#007BFF" />
-                        <Text style={styles.iconText}>Chờ xác nhận</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconContainer}>
-                        <Ionicons name="cube-outline" size={32} color="#FF9900" />
-                        <Text style={styles.iconText}>Chờ lấy hàng</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconContainer}>
-                        <MaterialCommunityIcons name="truck-delivery-outline" size={32} color="#FF4D4D" />
-                        <Text style={styles.iconText}>Chờ giao hàng</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconContainer}>
-                        <Ionicons name="star-outline" size={32} color="#28A745" />
-                        <Text style={styles.iconText}>Đánh giá</Text>
-                    </TouchableOpacity>
+                       {/* Chờ xác nhận */}
+                      <TouchableOpacity style={styles.iconContainer}>
+                          <MaterialCommunityIcons name="clipboard-check-outline" size={32} color="#007BFF" />
+                          <Text style={styles.iconText}>Chờ xác nhận</Text>
+                          {orderCounts.confirm > 0 && (
+                              <View style={styles.badge}>
+                                  <Text style={styles.badgeText}>{orderCounts.confirm}</Text>
+                              </View>
+                          )}
+                      </TouchableOpacity>
+
+                      {/* Chờ giao hàng */}
+                      <TouchableOpacity style={styles.iconContainer}>
+                          <Ionicons name="cube-outline" size={32} color="#FF9900" />
+                          <Text style={styles.iconText}>Chờ giao hàng</Text>
+                          {orderCounts.pickup > 0 && (
+                              <View style={styles.badge}>
+                                  <Text style={styles.badgeText}>{orderCounts.pickup}</Text>
+                              </View>
+                          )}
+                      </TouchableOpacity>
+
+                      {/* Đang giao */}
+                      <TouchableOpacity style={styles.iconContainer}>
+                          <MaterialCommunityIcons name="truck-delivery-outline" size={32} color="#FF4D4D" />
+                          <Text style={styles.iconText}>Đang giao</Text>
+                          {orderCounts.deliver > 0 && (
+                              <View style={styles.badge}>
+                                  <Text style={styles.badgeText}>{orderCounts.deliver}</Text>
+                              </View>
+                          )}
+                      </TouchableOpacity>
+
+                      <TouchableOpacity style={styles.iconContainer}>
+                          <Ionicons name="star-outline" size={32} color="#28A745" />
+                          <Text style={styles.iconText}>Đánh giá</Text>
+                      </TouchableOpacity>
                 </View>
             </View>
 
@@ -193,6 +237,22 @@ const styles = StyleSheet.create({
     logoutButtonText: {
         color: '#fff',
         fontSize: 18,
+        fontWeight: 'bold',
+    },
+     badge: {
+        position: 'absolute',
+        top: -4,
+        right: -10,
+        backgroundColor: '#FF4D4D',
+        borderRadius: 8,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    badgeText: {
+        color: '#fff',
+        fontSize: 10,
         fontWeight: 'bold',
     },
 });

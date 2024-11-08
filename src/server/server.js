@@ -167,7 +167,63 @@ app.get('/categories', (req, res) => {
 });
 
 
+app.get('/api/groupcart/:userid', (req, res) => {
+    const { userid } = req.params;
+
+    // Query để lấy thông tin các sản phẩm trong giỏ hàng, phân theo shop
+    const query = `
+        SELECT ci.cartitemid, p.productid, p.name, ci.size, ci.color, ci.price, ci.quantity, p.image, u.fullname AS shopName, p.userid AS shopUserId
+        FROM cartitem ci
+        JOIN product p ON ci.productid = p.productid
+        JOIN cart c ON ci.cartid = c.cartid
+        JOIN user u ON p.userid = u.userid
+        WHERE c.userid = ? AND c.status = 1;
+    `;
+
+    connection.query(query, [userid], (error, results) => {
+        if (error) {
+            console.error('Database error:', error);
+            return res.status(500).json({ success: false, message: 'Có lỗi xảy ra khi tải giỏ hàng' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ success: false, message: 'Giỏ hàng của bạn trống' });
+        }
+
+        // Tạo đối tượng để nhóm sản phẩm theo shop
+        const groupedCartItems = results.reduce((acc, item) => {
+            // Kiểm tra nếu shop đã có trong nhóm, nếu chưa thì tạo nhóm mới
+            if (!acc[item.shopUserId]) {
+                acc[item.shopUserId] = {
+                    shopName: item.shopName,
+                    products: []
+                };
+            }
+            // Thêm sản phẩm vào nhóm shop tương ứng
+            acc[item.shopUserId].products.push({
+                cartitemid: item.cartitemid,
+                productid: item.productid,
+                name: item.name,
+                size: item.size,
+                color: item.color,
+                price: item.price,
+                quantity: item.quantity,
+                image: item.image ? item.image.toString('base64') : null
+            });
+            return acc;
+        }, {});
+
+        // Chuyển nhóm dữ liệu thành mảng để dễ dàng trả về client
+        const cartItemsGroupedByShop = Object.values(groupedCartItems);
+
+        res.json({ success: true, cartItems: cartItemsGroupedByShop });
+    });
+});
+
+
+//src/server/server.js
 // API tải giỏ hàng
+
 app.get('/api/cart/:userid', (req, res) => {
     const { userid } = req.params;
     const query = `
@@ -198,6 +254,7 @@ app.get('/api/cart/:userid', (req, res) => {
         res.json({ success: true, cartItems: cleanedResults });
     });
 });
+
 
 // API thêm sản phẩm vào giỏ hàng
 app.post('/api/cart/add', (req, res) => {
@@ -484,7 +541,7 @@ app.post('/payment', (req, res) => {
 });
 
 
-
+//src/server/server.js
 app.get('/api/user/:userId', (req, res) => {
     const userId = req.params.userId;
     const query = 'SELECT userid, fullname, username, email, phonenumber, address FROM user WHERE userid = ?';
@@ -568,6 +625,36 @@ app.get('/api/products/:productId/attributes', (req, res) => {
         }
 
         res.json({ success: true, attributes: results });
+    });
+});
+// src/server/server.js
+// src/server/server.js
+app.get('/api/order/count/:userId', (req, res) => {
+    const userId = req.params.userId;
+    const query = `
+        SELECT
+            orderstatusid, COUNT(*) AS count
+        FROM \`order\`
+        WHERE userid = ?
+          AND orderstatusid IN (1, 2, 3)  -- Lọc theo các trạng thái cần hiển thị
+        GROUP BY orderstatusid
+    `;
+
+    connection.query(query, [userId], (error, results) => {
+        if (error) {
+            console.error('Lỗi khi lấy số lượng đơn hàng:', error);
+            return res.status(500).json({ success: false, message: 'Lỗi khi lấy số lượng đơn hàng' });
+        }
+
+        // Khởi tạo đối tượng để chứa số lượng đơn hàng cho mỗi trạng thái
+        const orderCounts = { confirm: 0, pickup: 0, deliver: 0 };
+        results.forEach(row => {
+            if (row.orderstatusid === 1) orderCounts.confirm = row.count;
+            if (row.orderstatusid === 2) orderCounts.pickup = row.count;
+            if (row.orderstatusid === 3) orderCounts.deliver = row.count;
+        });
+
+        res.status(200).json(orderCounts);
     });
 });
 

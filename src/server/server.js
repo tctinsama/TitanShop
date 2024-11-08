@@ -222,18 +222,18 @@ app.get('/api/groupcart/:userid', (req, res) => {
 
 
 //src/server/server.js
+
 // API tải giỏ hàng
 
 app.get('/api/cart/:userid', (req, res) => {
     const { userid } = req.params;
     const query = `
-
-        SELECT ci.cartitemid, p.productid, p.name, ci.size, ci.color, ci.price, ci.quantity, p.image
+        SELECT ci.cartitemid, p.productid, p.name, ci.size, ci.color, ci.price, ci.quantity, p.image, u.username AS shopName, p.userid
         FROM cartitem ci
         JOIN product p ON ci.productid = p.productid
         JOIN cart c ON ci.cartid = c.cartid
+        JOIN user u ON p.userid = u.userid
         WHERE c.userid = ? AND c.status = 1;
-
     `;
 
     connection.query(query, [userid], (error, results) => {
@@ -254,6 +254,7 @@ app.get('/api/cart/:userid', (req, res) => {
         res.json({ success: true, cartItems: cleanedResults });
     });
 });
+
 
 
 // API thêm sản phẩm vào giỏ hàng
@@ -658,7 +659,52 @@ app.get('/api/order/count/:userId', (req, res) => {
     });
 });
 
+// API để kiểm tra và áp dụng voucher
+app.post('/api/voucher/apply', (req, res) => {
+    const { vouchercode, totalAmount, userId } = req.body;  // Lấy mã voucher, tổng số tiền và userId từ request body
 
+    const query = `
+        SELECT vouchercode, percentdiscount, conditionvoucher, maxdiscount, startdate, enddate, status
+        FROM voucher
+        WHERE vouchercode = ? AND status = 1 AND startdate <= CURDATE() AND enddate >= CURDATE();
+    `;
+
+    connection.query(query, [vouchercode], (error, results) => {
+        if (error) {
+            console.error('Database error:', error);
+            return res.status(500).json({ success: false, message: 'Có lỗi xảy ra khi kiểm tra voucher' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ success: false, message: 'Voucher không hợp lệ hoặc đã hết hạn' });
+        }
+
+        const voucher = results[0];
+
+        // Kiểm tra điều kiện đơn hàng có lớn hơn giá trị điều kiện voucher không
+        if (totalAmount < voucher.conditionvoucher) {
+            return res.status(400).json({ success: false, message: `Giá trị đơn hàng phải lớn hơn ${voucher.conditionvoucher} để sử dụng voucher` });
+        }
+
+        // Tính toán giảm giá
+        let discount = (totalAmount * voucher.percentdiscount) / 100;
+        if (discount > voucher.maxdiscount) {
+            discount = voucher.maxdiscount;  // Giảm giá không vượt quá maxdiscount
+        }
+
+        // Trả về thông tin voucher và số tiền giảm
+        res.json({
+            success: true,
+            message: 'Voucher áp dụng thành công',
+            discount,
+            totalAfterDiscount: totalAmount - discount
+        });
+    });
+});
+
+
+
+///shop
 // API lấy sản phẩm cho cửa hàng
 //src/server/server.js
 app.get('/api/shop/products', (req, res) => {

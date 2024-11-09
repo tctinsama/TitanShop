@@ -15,6 +15,8 @@ import CategoryScreen from '../screens/customer/CategoryScreen';
 import ShopManagement from '../screens/client/ShopManagement';
 import ShopDetail from '../screens/client/ShopDetail';
 import AddProduct from '../screens/client/AddProduct';
+import OrderHistory from '../screens/client/OrderHistory';
+
 
 
 
@@ -53,7 +55,7 @@ const AppNavigator = () => {
       <Stack.Screen name="ShopManagement" component={ShopManagement} />
       <Stack.Screen name="ShopDetail" component={ShopDetail} />
       <Stack.Screen name="AddProduct" component={AddProduct} />
-
+    <Stack.Screen name="OrderHistory" component={OrderHistory} />
 
     </Stack.Navigator>
   );

@@ -167,14 +167,73 @@ app.get('/categories', (req, res) => {
 });
 
 
-// API tải giỏ hàng
-app.get('/api/cart/:userid', (req, res) => {
+app.get('/api/groupcart/:userid', (req, res) => {
     const { userid } = req.params;
+
+    // Query để lấy thông tin các sản phẩm trong giỏ hàng, phân theo shop
     const query = `
-        SELECT ci.cartitemid, p.productid, p.name, ci.size, ci.color, ci.price, ci.quantity, p.image
+
+        SELECT ci.cartitemid, p.productid, p.name, ci.size, ci.color, ci.price, ci.quantity, p.image, u.fullname AS shopName, p.userid AS shopUserId
         FROM cartitem ci
         JOIN product p ON ci.productid = p.productid
         JOIN cart c ON ci.cartid = c.cartid
+        JOIN user u ON p.userid = u.userid
+        WHERE c.userid = ? AND c.status = 1;
+    `;
+
+    connection.query(query, [userid], (error, results) => {
+        if (error) {
+            console.error('Database error:', error);
+            return res.status(500).json({ success: false, message: 'Có lỗi xảy ra khi tải giỏ hàng' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ success: false, message: 'Giỏ hàng của bạn trống' });
+        }
+
+        // Tạo đối tượng để nhóm sản phẩm theo shop
+        const groupedCartItems = results.reduce((acc, item) => {
+            // Kiểm tra nếu shop đã có trong nhóm, nếu chưa thì tạo nhóm mới
+            if (!acc[item.shopUserId]) {
+                acc[item.shopUserId] = {
+                    shopName: item.shopName,
+                    products: []
+                };
+            }
+            // Thêm sản phẩm vào nhóm shop tương ứng
+            acc[item.shopUserId].products.push({
+                cartitemid: item.cartitemid,
+                productid: item.productid,
+                name: item.name,
+                size: item.size,
+                color: item.color,
+                price: item.price,
+                quantity: item.quantity,
+                image: item.image ? item.image.toString('base64') : null
+            });
+            return acc;
+        }, {});
+
+        // Chuyển nhóm dữ liệu thành mảng để dễ dàng trả về client
+        const cartItemsGroupedByShop = Object.values(groupedCartItems);
+
+        res.json({ success: true, cartItems: cartItemsGroupedByShop });
+    });
+});
+
+
+//src/server/server.js
+
+// API tải giỏ hàng
+
+app.get('/api/cart/:userid', (req, res) => {
+    const { userid } = req.params;
+    const query = `
+        SELECT ci.cartitemid, p.productid, p.name, ci.size, ci.color, ci.price, ci.quantity, p.image, u.username AS shopName, p.userid
+        FROM cartitem ci
+        JOIN product p ON ci.productid = p.productid
+        JOIN cart c ON ci.cartid = c.cartid
+        JOIN user u ON p.userid = u.userid
         WHERE c.userid = ? AND c.status = 1;
     `;
 
@@ -196,6 +255,8 @@ app.get('/api/cart/:userid', (req, res) => {
         res.json({ success: true, cartItems: cleanedResults });
     });
 });
+
+
 
 // API thêm sản phẩm vào giỏ hàng
 app.post('/api/cart/add', (req, res) => {
@@ -482,7 +543,7 @@ app.post('/payment', (req, res) => {
 });
 
 
-
+//src/server/server.js
 app.get('/api/user/:userId', (req, res) => {
     const userId = req.params.userId;
     const query = 'SELECT userid, fullname, username, email, phonenumber, address FROM user WHERE userid = ?';
@@ -568,10 +629,85 @@ app.get('/api/products/:productId/attributes', (req, res) => {
         res.json({ success: true, attributes: results });
     });
 });
+// src/server/server.js
+// src/server/server.js
+app.get('/api/order/count/:userId', (req, res) => {
+    const userId = req.params.userId;
+    const query = `
+        SELECT
+            orderstatusid, COUNT(*) AS count
+        FROM \`order\`
+        WHERE userid = ?
+          AND orderstatusid IN (1, 2, 3)  -- Lọc theo các trạng thái cần hiển thị
+        GROUP BY orderstatusid
+    `;
+
+    connection.query(query, [userId], (error, results) => {
+        if (error) {
+            console.error('Lỗi khi lấy số lượng đơn hàng:', error);
+            return res.status(500).json({ success: false, message: 'Lỗi khi lấy số lượng đơn hàng' });
+        }
+
+        // Khởi tạo đối tượng để chứa số lượng đơn hàng cho mỗi trạng thái
+        const orderCounts = { confirm: 0, pickup: 0, deliver: 0 };
+        results.forEach(row => {
+            if (row.orderstatusid === 1) orderCounts.confirm = row.count;
+            if (row.orderstatusid === 2) orderCounts.pickup = row.count;
+            if (row.orderstatusid === 3) orderCounts.deliver = row.count;
+        });
+
+        res.status(200).json(orderCounts);
+    });
+});
+
+// API để kiểm tra và áp dụng voucher
+app.post('/api/voucher/apply', (req, res) => {
+    const { vouchercode, totalAmount, userId } = req.body;  // Lấy mã voucher, tổng số tiền và userId từ request body
+
+    const query = `
+        SELECT vouchercode, percentdiscount, conditionvoucher, maxdiscount, startdate, enddate, status
+        FROM voucher
+        WHERE vouchercode = ? AND status = 1 AND startdate <= CURDATE() AND enddate >= CURDATE();
+    `;
+
+    connection.query(query, [vouchercode], (error, results) => {
+        if (error) {
+            console.error('Database error:', error);
+            return res.status(500).json({ success: false, message: 'Có lỗi xảy ra khi kiểm tra voucher' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ success: false, message: 'Voucher không hợp lệ hoặc đã hết hạn' });
+        }
+
+        const voucher = results[0];
+
+        // Kiểm tra điều kiện đơn hàng có lớn hơn giá trị điều kiện voucher không
+        if (totalAmount < voucher.conditionvoucher) {
+            return res.status(400).json({ success: false, message: `Giá trị đơn hàng phải lớn hơn ${voucher.conditionvoucher} để sử dụng voucher` });
+        }
+
+        // Tính toán giảm giá
+        let discount = (totalAmount * voucher.percentdiscount) / 100;
+        if (discount > voucher.maxdiscount) {
+            discount = voucher.maxdiscount;  // Giảm giá không vượt quá maxdiscount
+        }
+
+        // Trả về thông tin voucher và số tiền giảm
+        res.json({
+            success: true,
+            message: 'Voucher áp dụng thành công',
+            discount,
+            totalAfterDiscount: totalAmount - discount
+        });
+    });
+});
 
 
+
+///shop
 // API lấy sản phẩm cho cửa hàng
-
+//src/server/server.js
 app.get('/api/shop/products', (req, res) => {
     const { userId } = req.query;
     console.log('Received user ID:', userId); // Log userId nhận được
@@ -599,8 +735,103 @@ app.get('/api/shop/products', (req, res) => {
     });
 });
 
+//src/server/server.js
+app.get('/api/shop/orders', (req, res) => {
+    const { userId } = req.query;
+
+    if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    // Câu query để đếm số lượng đơn hàng theo các trạng thái khác nhau
+    const query = `
+        SELECT
+            SUM(CASE WHEN o.orderstatusid = 1 THEN 1 ELSE 0 END) AS pendingConfirmation,
+            SUM(CASE WHEN o.orderstatusid = 2 THEN 1 ELSE 0 END) AS pendingPickup,
+            SUM(CASE WHEN o.orderstatusid = 3 THEN 1 ELSE 0 END) AS shipping,
+            SUM(CASE WHEN o.orderstatusid = 4 THEN 1 ELSE 0 END) AS delivered
+        FROM \`orderdetails\` od
+        INNER JOIN \`product\` p ON od.productid = p.productid
+        INNER JOIN \`order\` o ON od.ordercode = o.ordercode
+        WHERE p.userid = ?
+    `;
+
+    connection.query(query, [userId], (error, results) => {
+        if (error) {
+            return res.status(500).json({ error: 'An error occurred while fetching order stats' });
+        }
+
+        res.json(results[0]);
+    });
+});
 
 
+// API lấy danh sách đơn hàng theo trạng thái
+app.get('/api/shop/orders/status', (req, res) => {
+    const { userId, orderStatusId } = req.query;
+
+    // Kiểm tra đầu vào
+    if (!userId || !orderStatusId) {
+        return res.status(400).json({ error: 'Both User ID and Order Status ID are required.' });
+    }
+
+    // Kiểm tra dữ liệu đầu vào có hợp lệ không (tránh SQL Injection)
+    if (isNaN(userId) || isNaN(orderStatusId)) {
+        return res.status(400).json({ error: 'User ID and Order Status ID must be valid numbers.' });
+    }
+
+    // Truy vấn SQL để lấy đơn hàng theo trạng thái và người bán (client)
+    const query = `
+        SELECT o.ordercode, o.orderdate, o.total, o.name, o.phonenumber, o.address, o.orderstatusid
+        FROM \`orderdetails\` od
+        INNER JOIN \`product\` p ON od.productid = p.productid
+        INNER JOIN \`order\` o ON od.ordercode = o.ordercode
+        WHERE p.userid = ? AND o.orderstatusid = ?
+    `;
+
+    // Thực hiện truy vấn
+    connection.query(query, [userId, orderStatusId], (error, results) => {
+        if (error) {
+            console.error("Error executing query:", error);  // Log lỗi nếu có
+            return res.status(500).json({ error: 'An error occurred while fetching orders' });
+        }
+//        console.log("Orders fetched from DB:", results);  // Log kết quả từ DB
+        res.json(results);  // Trả về kết quả đơn hàng
+
+    });
+});
+
+// API cập nhật trạng thái đơn hàng
+app.put('/api/shop/orders/confirm', (req, res) => {
+  const { orderCode, newStatus } = req.body;
+
+  // Kiểm tra đầu vào
+  if (!orderCode || !newStatus) {
+    return res.status(400).json({ error: 'Order code and new status are required.' });
+  }
+
+  // Kiểm tra dữ liệu đầu vào có hợp lệ không
+  if (isNaN(orderCode) || isNaN(newStatus)) {
+    return res.status(400).json({ error: 'Order code and new status must be valid numbers.' });
+  }
+
+  // Cập nhật trạng thái đơn hàng trong cơ sở dữ liệu
+  const query = `
+    UPDATE \`order\`
+    SET orderstatusid = ?
+    WHERE ordercode = ?
+  `;
+
+  connection.query(query, [newStatus, orderCode], (error, results) => {
+    if (error) {
+      console.error("Error updating order status:", error);
+      return res.status(500).json({ error: 'An error occurred while updating order status' });
+    }
+
+    // Trả về thông báo thành công
+    res.status(200).json({ message: 'Order status updated successfully' });
+  });
+});
 
 // Bắt đầu lắng nghe server
 app.listen(port, () => {

@@ -1,3 +1,4 @@
+//src/screens/customer/ProductDetail.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useUser } from '../../context/UserContext';

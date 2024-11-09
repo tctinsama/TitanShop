@@ -19,14 +19,36 @@ const CategoryScreen = () => {
 
     const fetchCartQuantity = async () => {
         try {
-            const response = await fetch(`${API_URL}/cart/${userId}`);
-            const data = await response.json();
-            if (response.ok) {
-                const totalQuantity = data.cartItems.reduce((sum, item) => sum + item.cartquantity, 0);
+            const response = await fetch(`${API_URL}/api/cart/${userId}`);
+    
+            if (!response.ok) {
+                if (response.status === 404) {
+                    // Giỏ hàng trống, đặt số lượng giỏ hàng là 0
+                    setCartQuantity(0);
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+    
+            const responseText = await response.text();
+    
+            if (responseText.startsWith('<')) {
+                console.error('HTML Response:', responseText);
+                Alert.alert('Error', 'API returned HTML instead of JSON');
+                return;
+            }
+    
+            const data = JSON.parse(responseText);
+    
+            if (data.success) {
+                const totalQuantity = data.cartItems.reduce((sum, item) => sum + item.quantity, 0);
                 setCartQuantity(totalQuantity);
+            } else {
+                console.error(data.message);
             }
         } catch (error) {
-            console.error('Failed to fetch cart quantity', error);
+            console.error('Failed to fetch cart quantity:', error);
+            Alert.alert('Error', 'Không thể tải thông tin giỏ hàng.');
         }
     };
 

@@ -1,34 +1,20 @@
-// src/context/UserContext.js
 import React, { createContext, useContext, useState } from 'react';
 
+// Tạo context cho người dùng
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
+    // Trạng thái lưu trữ userId và fullname riêng biệt
     const [userId, setUserId] = useState(null);
+    const [fullname, setFullname] = useState('');
 
+    // Đảm bảo việc gọi hooks luôn theo thứ tự
     return (
-        <UserContext.Provider value={{ userId, setUserId }}>
+        <UserContext.Provider value={{ userId, setUserId, fullname, setFullname }}>
             {children}
         </UserContext.Provider>
     );
 };
 
-export const useUser = () => useContext(UserContext); // Xuất khẩu đúng
-
-//
-//// src/context/UserContext.js
-//import React, { createContext, useContext, useState } from 'react';
-//
-//const UserContext = createContext();
-//
-//export const UserProvider = ({ children }) => {
-//    const [user, setUser] = useState({ userId: null, fullname: '' });
-//
-//    return (
-//        <UserContext.Provider value={{ user, setUser }}>
-//            {children}
-//        </UserContext.Provider>
-//    );
-//};
-//
-//export const useUser = () => useContext(UserContext); // Xuất khẩu đúng
+// Hook để lấy dữ liệu từ context
+export const useUser = () => useContext(UserContext);

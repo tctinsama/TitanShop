@@ -16,26 +16,31 @@ const CartScreen = () => {
 
 
     // Fetch cart items from API
-    const fetchCartItems = async () => {
-        setLoading(true);
-        try {
-            const response = await fetch(`${API_URL}/api/cart/${userId}`);
-            if (!response.ok) throw new Error('Cannot load cart items');
+const fetchCartItems = async () => {
+    setLoading(true);
+    try {
+        const response = await fetch(`${API_URL}/api/cart/${userId}`);
 
-            const data = await response.json();
-            if (data?.cartItems) {
-                setCartItems(data.cartItems);
+        if (!response.ok) {
+            if (response.status === 404) {
+                setCartItems([]);  // Giỏ hàng trống
             } else {
-                Alert.alert('Error', 'Cart is empty');
+                throw new Error(`Error: ${response.status}`);
             }
-        } catch (error) {
-            Alert.alert('Error', 'Cannot connect to server');
-            console.error('Error fetching cart items:', error);
-        } finally {
-            setLoading(false);
         }
-    };
 
+        const data = await response.json();
+        if (data?.success && data.cartItems.length > 0) {
+            setCartItems(data.cartItems);
+        } else {
+            setCartItems([]);  // Giỏ hàng trống
+        }
+    } catch (error) {
+        console.error('Error fetching cart items:', error);
+    } finally {
+        setLoading(false);
+    }
+};
     useEffect(() => {
         if (userId) fetchCartItems();
     }, [userId]);
@@ -81,7 +86,7 @@ const CartScreen = () => {
         try {
             const response = await fetch(`${API_URL}/api/cart/remove/${cartItemId}`, { method: 'DELETE' });
             if (!response.ok) throw new Error('Failed to remove item');
-            Alert.alert('Success', 'Đơn hàng đã xóa');
+            Alert.alert('Success', 'Sản phẩm đã được xóa khỏi giỏ hàng');
             fetchCartItems();
         } catch (error) {
             Alert.alert('Error', 'Failed to connect to server');

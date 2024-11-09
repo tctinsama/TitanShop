@@ -1,52 +1,35 @@
-//src/screens/customer/CheckoutScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../context/UserContext'; // Import context để lấy thông tin người dùng
 import { API_URL } from '@env';
 
 const CheckoutScreen = () => {
-    const { userId } = useUser();
+    const { userId, userAddress, phoneNumber, fullName } = useUser(); // Get user info from context
     const navigation = useNavigation();
     const route = useRoute();
 
-    const { productIds = [], totalAmount, cartItems } = route.params || {};
-
-    const [userAddress, setUserAddress] = useState('');
-    const [phoneNumber, setPhoneNumber] = useState('');
+    const [address, setAddress] = useState(userAddress || '');
+    const [phone, setPhone] = useState(phoneNumber || '');
+    const [name, setName] = useState(fullName || '');
     const [voucherCode, setVoucherCode] = useState('');
     const [discount, setDiscount] = useState(0);
-    const [totalAfterDiscount, setTotalAfterDiscount] = useState(totalAmount);  // Tổng tiền sau khi giảm giá
-    const [isLoading, setIsLoading] = useState(true);
+    const [totalAfterDiscount, setTotalAfterDiscount] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
     const shippingFee = 30000;
 
+    const { cartItems = [], totalAmount } = route.params || {};
+
+    // Kiểm tra giỏ hàng
+    const productIds = cartItems.map(item => item.productid);
+
     useEffect(() => {
-//        // Log dữ liệu khi màn hình CheckoutScreen mở ra
-//        console.log("Total Amount:", totalAmount);
-//        console.log("Cart Items:", cartItems);
-        console.log("Product IDs:", productIds);
-
-        // Gọi hàm fetchUserInfo để lấy thông tin người dùng
-        fetchUserInfo(productIds);
-    }, []);
-
-    const fetchUserInfo = async () => {
-        try {
-            const response = await fetch(`${API_URL}/api/user/${userId}`);
-            const data = await response.json();
-            if (response.ok) {
-                setUserAddress(data.address || '');
-                setPhoneNumber(data.phonenumber?.toString() || '');
-            } else {
-                Alert.alert('Lỗi', data.message);
-            }
-        } catch (error) {
-            Alert.alert('Lỗi', `Không thể kết nối đến server: ${error.message}`);
-        } finally {
-            setIsLoading(false);
+        if (productIds.length === 0 || cartItems.length === 0) {
+            Alert.alert('Lỗi', 'Không có sản phẩm trong giỏ hàng.');
         }
-    };
+    }, [cartItems]);
 
+    // Áp dụng mã voucher
     const applyVoucher = async () => {
         if (!voucherCode) {
             Alert.alert('Lỗi', 'Vui lòng nhập mã voucher');
@@ -62,8 +45,8 @@ const CheckoutScreen = () => {
 
             const result = await response.json();
             if (result.success) {
-                setDiscount(result.discount);  // Cập nhật giá trị giảm
-                setTotalAfterDiscount(result.totalAfterDiscount);  // Cập nhật tổng tiền sau giảm
+                setDiscount(result.discount);
+                setTotalAfterDiscount(result.totalAfterDiscount);
                 Alert.alert('Thông báo', result.message);
             } else {
                 Alert.alert('Lỗi', result.message);
@@ -73,21 +56,23 @@ const CheckoutScreen = () => {
         }
     };
 
+    // Thanh toán và làm trống giỏ hàng
     const handlePayment = async () => {
-     console.log('productIds:', productIds);
         if (productIds.length === 0) {
             Alert.alert('Lỗi', 'Không có sản phẩm hợp lệ.');
             return;
         }
 
         try {
+            setIsLoading(true);
             const response = await fetch(`${API_URL}/api/order/create`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     userId,
-                    address: userAddress,
-                    phoneNumber,
+                    name,
+                    address,
+                    phoneNumber: phone,
                     totalPayment: totalAfterDiscount + shippingFee,
                     cartItems,
                 }),
@@ -95,6 +80,8 @@ const CheckoutScreen = () => {
 
             const result = await response.json();
             if (result.success) {
+                await clearCart(); // Xóa giỏ hàng sau khi thanh toán thành công
+
                 Alert.alert('Thông báo', 'Thanh toán thành công!', [
                     { text: 'OK', onPress: () => navigation.replace('OrderSuccess', { orderCode: result.orderCode }) },
                 ]);
@@ -103,15 +90,39 @@ const CheckoutScreen = () => {
             }
         } catch (error) {
             Alert.alert('Lỗi', `Thanh toán thất bại: ${error.message}`);
+        } finally {
+            setIsLoading(false);
         }
     };
-     // Định dạng tiền VNĐ
+
+    // Hàm làm trống giỏ hàng
+    const clearCart = async () => {
+        try {
+            const response = await fetch(`${API_URL}/api/cart/clear`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId }),
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                console.log('Giỏ hàng đã được làm trống');
+            } else {
+                Alert.alert('Lỗi', 'Không thể làm trống giỏ hàng');
+            }
+        } catch (error) {
+            Alert.alert('Lỗi', `Lỗi khi làm trống giỏ hàng: ${error.message}`);
+        }
+    };
+
+    // Định dạng tiền
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
         }).format(amount);
     };
+
     if (isLoading) {
         return <ActivityIndicator size="large" color="#0000ff" />;
     }
@@ -119,18 +130,25 @@ const CheckoutScreen = () => {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <Text style={styles.title}>Thông tin giao hàng</Text>
+            <Text style={styles.label}>Họ và tên:</Text>
+            <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="Full Name"
+            />
             <Text style={styles.label}>Địa chỉ:</Text>
             <TextInput
                 style={styles.input}
-                value={userAddress}
-                onChangeText={setUserAddress}
+                value={address}
+                onChangeText={setAddress}
                 placeholder="Nhập địa chỉ của bạn"
             />
             <Text style={styles.label}>Số điện thoại:</Text>
             <TextInput
                 style={styles.input}
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
+                value={phone}
+                onChangeText={setPhone}
                 keyboardType="numeric"
                 placeholder="Nhập số điện thoại"
             />
@@ -146,18 +164,14 @@ const CheckoutScreen = () => {
             </TouchableOpacity>
 
             <View style={styles.totalContainer}>
-                  <Text style={styles.totalText}>Tổng tiền: <Text style={styles.amount}>{formatCurrency(totalAmount)}</Text></Text>
+                <Text style={styles.totalText}>Tổng tiền: <Text style={styles.amount}>{formatCurrency(totalAmount)}</Text></Text>
                 <Text style={styles.totalText}>Giảm giá: <Text style={styles.amount}>-{formatCurrency(discount)}</Text></Text>
                 <Text style={styles.totalText}>Phí vận chuyển: <Text style={styles.amount}>{formatCurrency(shippingFee)}</Text></Text>
                 <Text style={styles.totalText}>Tổng thanh toán: <Text style={styles.amount}>{formatCurrency(totalAfterDiscount + shippingFee)}</Text></Text>
             </View>
 
-            <TouchableOpacity style={styles.paymentButton} onPress={handlePayment}>
-                <Text style={styles.paymentButtonText}>Xác nhận thanh toán</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()}>
-                <Text style={styles.cancelButtonText}>Hủy bỏ</Text>
+            <TouchableOpacity style={styles.button} onPress={handlePayment}>
+                <Text style={styles.buttonText}>Thanh toán</Text>
             </TouchableOpacity>
         </ScrollView>
     );
@@ -165,75 +179,45 @@ const CheckoutScreen = () => {
 
 const styles = StyleSheet.create({
     container: {
-        flexGrow: 1,
         padding: 20,
-        backgroundColor: '#f9f9f9',
     },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#333',
         marginBottom: 20,
-        textAlign: 'center',
     },
     label: {
         fontSize: 16,
-        fontWeight: '500',
-        color: '#333',
-        marginBottom: 8,
+        marginVertical: 8,
     },
     input: {
+        height: 40,
+        borderColor: '#ddd',
         borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
-        marginBottom: 16,
-        backgroundColor: '#fff',
+        paddingHorizontal: 10,
+        marginBottom: 10,
+    },
+    button: {
+        backgroundColor: '#ff6347',
+        padding: 15,
+        borderRadius: 5,
+        marginVertical: 10,
+    },
+    buttonText: {
+        color: '#fff',
+        textAlign: 'center',
+        fontSize: 18,
     },
     totalContainer: {
         marginVertical: 20,
-        padding: 16,
-        backgroundColor: '#fff',
-        borderRadius: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
     },
     totalText: {
-        fontSize: 18,
-        color: '#333',
-        marginBottom: 8,
+        fontSize: 16,
+        marginVertical: 5,
     },
     amount: {
         fontWeight: 'bold',
-        color: '#28a745',
     },
-    paymentButton: {
-        backgroundColor: '#28a745',
-        paddingVertical: 14,
-        borderRadius: 8,
-        marginBottom: 10,
-    },
-    paymentButtonText: {
-        color: '#fff',
-        textAlign: 'center',
-        fontSize: 18,
-        fontWeight: '600',
-    },
-    cancelButton: {
-        backgroundColor: '#f44336',
-        paddingVertical: 14,
-        borderRadius: 8,
-    },
-    cancelButtonText: {
-        color: '#fff',
-        textAlign: 'center',
-        fontSize: 18,
-        fontWeight: '600',
-    },
-    buttonText: { color: '#f44336', textAlign: 'center', fontSize: 16 },
 });
 
 export default CheckoutScreen;

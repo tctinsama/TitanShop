@@ -1,32 +1,34 @@
-//src/screens/customer/ProductDetail.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { useUser } from '../../context/UserContext';
 import { API_URL } from '@env';
-import { Picker } from '@react-native-picker/picker';
+import { AirbnbRating } from 'react-native-ratings';
 
 const ProductDetail = ({ route }) => {
     const { product } = route.params;
-    const { userId } = useUser();
+    const { userId, userName } = useUser();  // Lấy tên người dùng từ context
 
     const [sizes, setSizes] = useState([]);
     const [colors, setColors] = useState([]);
     const [selectedSize, setSelectedSize] = useState(null);
     const [selectedColor, setSelectedColor] = useState(null);
+    const [comments, setComments] = useState([]);
+    const [newComment, setNewComment] = useState('');
+    const [rating, setRating] = useState(0);
 
+    const [refreshComments, setRefreshComments] = useState(false);  // State để đánh dấu khi cần làm mới bình luận
+
+    // Fetch thuộc tính sản phẩm và bình luận
     useEffect(() => {
-        // Fetch sizes and colors
         const fetchAttributes = async () => {
             try {
                 const response = await fetch(`${API_URL}/api/products/${product.id}/attributes`);
                 const data = await response.json();
-
                 if (data.success) {
                     const uniqueSizes = [...new Set(data.attributes.map(attr => attr.size))];
                     const uniqueColors = [...new Set(data.attributes.map(attr => attr.color))];
                     setSizes(uniqueSizes);
                     setColors(uniqueColors);
-
                     setSelectedSize(uniqueSizes[0]);
                     setSelectedColor(uniqueColors[0]);
                 } else {
@@ -37,8 +39,23 @@ const ProductDetail = ({ route }) => {
             }
         };
 
+        const fetchComments = async () => {
+            try {
+                const response = await fetch(`${API_URL}/api/comments/${product.id}`);
+                const data = await response.json();
+                if (data.success) {
+                    setComments(data.comments);
+                } else {
+                    Alert.alert('Thông báo', 'Không có bình luận cho sản phẩm này');
+                }
+            } catch (error) {
+                Alert.alert('Lỗi', 'Không thể kết nối đến server');
+            }
+        };
+
         fetchAttributes();
-    }, [product.id]);
+        fetchComments();
+    }, [product.id, refreshComments]);  // Theo dõi refreshComments để gọi lại fetchComments khi nó thay đổi
 
     const handleAddToCart = async () => {
         if (!userId) {
@@ -54,93 +71,178 @@ const ProductDetail = ({ route }) => {
         try {
             const response = await fetch(`${API_URL}/api/cart/add`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     userid: userId,
                     productid: product.id,
-                    quantity: 1, // sửa từ cartquantity
+                    quantity: 1,
                     size: selectedSize,
                     color: selectedColor,
-                    price: product.price, // thêm trường price
+                    price: product.price,
                 }),
             });
 
             const data = await response.json();
-
             if (response.ok) {
                 Alert.alert('Thông báo', 'Thêm sản phẩm vào giỏ hàng thành công');
             } else {
-                
                 Alert.alert('Lỗi', data.message || 'Đã xảy ra lỗi khi thêm vào giỏ hàng');
             }
         } catch (error) {
-            console.log('Lỗi fetch thuộc tính:', error);
+            Alert.alert('Lỗi', 'Không thể kết nối đến server');
+        }
+    };
+
+    const handleSubmitComment = async () => {
+        if (!newComment.trim()) {
+            Alert.alert('Thông báo', 'Vui lòng nhập bình luận');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/api/comments/add`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productid: product.id,
+                    userid: userId,
+                    content: newComment,
+                    stars: rating,
+                }),
+            });
+    
+            const data = await response.json();
+    
+            if (data.success) {
+                setNewComment('');  // Reset comment input
+                setRating(0);  // Reset rating
+                setRefreshComments(prev => !prev);  // Thay đổi giá trị refreshComments để trigger lại useEffect
+                Alert.alert('Thông báo', 'Bình luận của bạn đã được gửi');
+            } else {
+                Alert.alert('Lỗi', data.message || 'Không thể gửi bình luận');
+            }
+        } catch (error) {
+            console.error('Lỗi khi gửi bình luận:', error);
             Alert.alert('Lỗi', 'Không thể kết nối đến server');
         }
     };
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <Image 
-                source={{ uri: product.image }} 
-                style={styles.image} 
-                resizeMode="cover"
-            />
+            <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
             <View style={styles.detailsContainer}>
                 <Text style={styles.productName}>{product.name}</Text>
                 <Text style={styles.productPrice}>${product.price}</Text>
                 <Text style={styles.productDescription}>{product.productdes}</Text>
 
-                {/* Size Picker */}
-                <View style={styles.pickerContainer}>
-                    <Text style={styles.infoTitle}>Size:</Text>
-                    <Picker
-                        selectedValue={selectedSize}
-                        style={styles.picker}
-                        onValueChange={(itemValue) => setSelectedSize(itemValue)}
-                    >
+                {/* Size Selection */}
+                <View style={styles.attributeContainer}>
+                    <Text style={styles.attributeTitle}>Size:</Text>
+                    <View style={styles.optionContainer}>
                         {sizes.map((size, index) => (
-                            <Picker.Item key={index} label={size} value={size} />
+                            <TouchableOpacity
+                                key={index}
+                                style={[styles.optionButton, selectedSize === size && styles.optionButtonSelected]}
+                                onPress={() => setSelectedSize(size)}
+                            >
+                                <Text style={[styles.optionText, selectedSize === size && styles.optionTextSelected]}>
+                                    {size}
+                                </Text>
+                            </TouchableOpacity>
                         ))}
-                    </Picker>
+                    </View>
                 </View>
 
-                {/* Color Picker */}
-                <View style={styles.pickerContainer}>
-                    <Text style={styles.infoTitle}>Color:</Text>
-                    <Picker
-                        selectedValue={selectedColor}
-                        style={styles.picker}
-                        onValueChange={(itemValue) => setSelectedColor(itemValue)}
-                    >
+                {/* Color Selection */}
+                <View style={styles.attributeContainer}>
+                    <Text style={styles.attributeTitle}>Color:</Text>
+                    <View style={styles.optionContainer}>
                         {colors.map((color, index) => (
-                            <Picker.Item key={index} label={color} value={color} />
+                            <TouchableOpacity
+                                key={index}
+                                style={[styles.optionButton, selectedColor === color && styles.optionButtonSelected]}
+                                onPress={() => setSelectedColor(color)}
+                            >
+                                <Text style={[styles.optionText, selectedColor === color && styles.optionTextSelected]}>
+                                    {color}
+                                </Text>
+                            </TouchableOpacity>
                         ))}
-                    </Picker>
+                    </View>
                 </View>
 
                 <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
                     <Text style={styles.addToCartButtonText}>Add to Cart</Text>
                 </TouchableOpacity>
+
+                {/* Rating Section */}
+                <View style={styles.ratingContainer}>
+                    <Text style={styles.ratingTitle}>Đánh giá:</Text>
+                    <AirbnbRating
+                        count={5}
+                        defaultRating={rating}
+                        size={30}
+                        onFinishRating={setRating}
+                        showRating={false}
+                    />
+                </View>
+
+                {/* Comments Section */}
+                <View style={styles.commentsContainer}>
+                    <Text style={styles.commentsTitle}>Bình luận:</Text>
+                    {comments.length === 0 ? (
+                        <Text style={styles.noCommentsText}>Không có bình luận cho sản phẩm này</Text>
+                    ) : (
+                        comments.map((comment, index) => (
+                            <View key={index} style={styles.commentBox}>
+                                <Text style={styles.commentText}>{comment.content}</Text>
+                            </View>
+                        ))
+                    )}
+
+                    <TextInput
+                        style={styles.commentInput}
+                        placeholder="Nhập bình luận..."
+                        value={newComment}
+                        onChangeText={setNewComment}
+                    />
+                    <TouchableOpacity style={styles.commentButton} onPress={handleSubmitComment}>
+                        <Text style={styles.commentButtonText}>Gửi bình luận</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flexGrow: 1, backgroundColor: '#FFFFFF', padding: 16 },
+    container: { flexGrow: 1, backgroundColor: '#f8f8f8', padding: 16 },
     image: { width: '100%', height: 300, borderRadius: 8, marginBottom: 16 },
-    detailsContainer: { flex: 1, backgroundColor: '#FFFFFF' },
-    productName: { fontSize: 24, fontWeight: 'bold', marginBottom: 8, color: '#333' },
-    productPrice: { fontSize: 20, fontWeight: '600', color: '#E91E63', marginBottom: 16 },
-    productDescription: { fontSize: 16, color: '#666', lineHeight: 22, marginBottom: 16 },
-    pickerContainer: { marginBottom: 8 },
-    infoTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 4 },
-    picker: { height: 50, width: '100%' },
-    addToCartButton: { backgroundColor: '#E91E63', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 16 },
-    addToCartButtonText: { fontSize: 16, color: '#FFFFFF', fontWeight: 'bold' },
+    detailsContainer: { flex: 1, backgroundColor: '#fff', padding: 16, borderRadius: 8 },
+    productName: { fontSize: 26, fontWeight: 'bold', marginBottom: 8, color: '#333' },
+    productPrice: { fontSize: 22, fontWeight: '600', color: '#E91E63', marginBottom: 8 },
+    productDescription: { fontSize: 16, marginBottom: 16, color: '#555' },
+    attributeContainer: { marginBottom: 16 },
+    attributeTitle: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
+    optionContainer: { flexDirection: 'row', flexWrap: 'wrap' },
+    optionButton: {
+        borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 8, margin: 4,
+    },
+    optionButtonSelected: { backgroundColor: '#E91E63' },
+    optionText: { fontSize: 16, color: '#333' },
+    optionTextSelected: { color: '#fff' },
+    addToCartButton: { backgroundColor: '#E91E63', paddingVertical: 12, borderRadius: 8, marginBottom: 16 },
+    addToCartButtonText: { fontSize: 18, fontWeight: 'bold', color: '#fff', textAlign: 'center' },
+    ratingContainer: { marginBottom: 16 },
+    ratingTitle: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
+    commentsContainer: { marginTop: 16 },
+    commentsTitle: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
+    commentBox: { padding: 12, backgroundColor: '#f0f0f0', marginBottom: 8, borderRadius: 8 },
+    commentText: { fontSize: 16, color: '#333' },
+    noCommentsText: { fontSize: 16, color: '#888' },
+    commentInput: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 8, marginBottom: 8, height: 40 },
+    commentButton: { backgroundColor: '#E91E63', paddingVertical: 10, borderRadius: 8 },
+    commentButtonText: { fontSize: 16, fontWeight: 'bold', color: '#fff', textAlign: 'center' },
 });
 
 export default ProductDetail;

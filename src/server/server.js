@@ -839,6 +839,70 @@ app.put('/api/shop/orders/confirm', (req, res) => {
   });
 });
 
+
+// POST /api/comments/add
+app.post('/api/comments/add', async (req, res) => {
+    const { productid, userid, content, stars } = req.body;
+
+    // Kiểm tra dữ liệu đầu vào
+    if (!productid || !userid || !content || stars === undefined) {
+        return res.status(400).json({ success: false, message: 'Thông tin thiếu' });
+    }
+
+    try {
+        // Thêm bình luận vào bảng 'comment'
+        const query = 'INSERT INTO comment (productid, userid, content, stars, timecomment) VALUES (?, ?, ?, ?, NOW())';
+        connection.query(query, [productid, userid, content, stars], (error, results) => {
+            if (error) {
+                console.error('Lỗi khi thêm bình luận:', error);
+                return res.status(500).json({ success: false, message: 'Lỗi server' });
+            }
+
+            res.status(201).json({ success: true, message: 'Bình luận thành công' });
+        });
+    } catch (error) {
+        console.error('Lỗi khi thêm bình luận:', error);
+        res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
+});
+
+
+// GET /api/comments/:productid
+app.get('/api/comments/:productid', async (req, res) => {
+    const { productid } = req.params;
+
+    try {
+        // Lấy bình luận từ bảng 'comment' và thông tin người dùng từ bảng 'user'
+        const query = `
+            SELECT comment.commentid, comment.content, comment.timecomment, comment.stars, user.username 
+            FROM comment 
+            JOIN user ON comment.userid = user.userid 
+            WHERE comment.productid = ? 
+            ORDER BY comment.timecomment DESC
+        `;
+        connection.query(query, [productid], (error, comments) => {
+            if (error) {
+                console.error('Lỗi khi lấy bình luận:', error);
+                return res.status(500).json({ success: false, message: 'Lỗi server' });
+            }
+
+            // Nếu không có bình luận nào, trả về danh sách trống
+            if (comments.length === 0) {
+                return res.json({ success: true, comments: [] });
+            }
+
+            res.json({ success: true, comments });
+        });
+    } catch (error) {
+        console.error('Lỗi khi lấy bình luận:', error);
+        res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
+});
+
+
+
+
+
 // Bắt đầu lắng nghe server
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);

@@ -1,4 +1,4 @@
-// src/screens/Profile.js
+// src/screens/customer/Profile.js
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,7 +15,37 @@ const Profile = () => {
     const [fullname, setFullname] = useState('');
     const [role, setRole] = useState('');  // State lưu rolename
     const [orderCounts, setOrderCounts] = useState({ confirm: 0, pickup: 0, deliver: 0 });
+    const [loading, setLoading] = useState(false);
+    const handleRegisterShop = async () => {
+        if (!userId) {
+          Alert.alert('Lỗi', 'Không có userId. Vui lòng đăng nhập lại.');
+          return;
+        }
 
+        setLoading(true);
+        try {
+          const response = await fetch(`${API_URL}/api/role/update-approval`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ userId }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            Alert.alert('Thông báo', data.message);
+          } else {
+            Alert.alert('Lỗi', data.message || 'Không thể gửi yêu cầu. Vui lòng thử lại sau.');
+          }
+        } catch (error) {
+          console.error("Lỗi khi cập nhật trạng thái:", error);
+          Alert.alert("Lỗi", "Không thể gửi yêu cầu. Vui lòng thử lại sau.");
+        } finally {
+          setLoading(false);
+        }
+      };
     // Lấy fullname và rolename từ AsyncStorage
     useEffect(() => {
         const fetchUserInfo = async () => {
@@ -154,16 +184,16 @@ const Profile = () => {
             </View>
 
         {/* Tiện ích */}
-        <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Tiện ích</Text>
-            {/* Kiểm tra nếu rolename là 'customer' thì mới hiển thị mục dưới đây */}
-            {role === 'customer' && (
-                <TouchableOpacity style={styles.supportItem}>
-                    <Ionicons name="help-circle-outline" size={24} color="#007BFF" />
-                    <Text style={styles.supportText}>Đăng kí trở thành nhà bán hàng</Text>
-                </TouchableOpacity>
-            )}
-        </View>
+          {/* Nội dung hồ sơ người dùng */}
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Tiện ích</Text>
+                {role === 'customer' && (
+                    <TouchableOpacity style={styles.supportItem} onPress={handleRegisterShop} disabled={loading}>
+                      <Ionicons name="help-circle-outline" size={24} color="#007BFF" />
+                      <Text style={styles.supportText}>Đăng kí trở thành nhà bán hàng</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
 
 
             <TouchableOpacity style={styles.logoutButton} onPress={confirmLogout}>

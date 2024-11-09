@@ -680,10 +680,38 @@ app.post('/api/voucher/apply', (req, res) => {
         });
     });
 });
+//src/server/server.js
+// API cập nhật approval của role
+app.post('/api/role/update-approval', (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'UserID không hợp lệ' });
+  }
+
+  // Cập nhật giá trị approval trong bảng role
+  const updateQuery = `
+    UPDATE role
+    SET approval = 0
+    WHERE userid = ? AND approval = 1
+  `;
+
+  connection.query(updateQuery, [userId], (err, result) => {
+    if (err) {
+      console.error('Lỗi khi cập nhật dữ liệu:', err);
+      return res.status(500).json({ message: 'Không thể cập nhật trạng thái' });
+    }
+
+    if (result.affectedRows > 0) {
+      return res.status(200).json({ message: 'Đăng ký thành công. Yêu cầu của bạn đang chờ phê duyệt.' });
+    } else {
+      return res.status(400).json({ message: 'Lỗi cập nhật, vui lòng thử lại sau.' });
+    }
+  });
+});
 
 
-
-///shop
+/// dưới ni là phần của shop
 // API lấy sản phẩm cho cửa hàng
 //src/server/server.js
 app.get('/api/shop/products', (req, res) => {

@@ -52,7 +52,6 @@ const Profile = () => {
             const rolename = await AsyncStorage.getItem('rolename');
             setFullname(name || 'Không rõ');
             setRole(rolename || '');
-
         };
         fetchUserInfo();
     }, []);
@@ -156,13 +155,20 @@ const Profile = () => {
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Hỗ Trợ</Text>
+
+                <TouchableOpacity onPress={() => navigation.navigate('ChatScreen')} style={styles.supportItem}>
+                    <Ionicons name="chatbubbles-outline" size={24} color="#007BFF" />
+                    <Text style={styles.supportText}>Trò chuyện trợ lí AI</Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity style={styles.supportItem}>
                     <Ionicons name="help-circle-outline" size={24} color="#007BFF" />
                     <Text style={styles.supportText}>Trung tâm trợ giúp</Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity style={styles.supportItem}>
-                    <Ionicons name="chatbubbles-outline" size={24} color="#007BFF" />
-                    <Text style={styles.supportText}>Trò chuyện</Text>
+                    <Ionicons name="information-circle-outline" size={24} color="#007BFF" />
+                    <Text style={styles.supportText}>Về chúng tôi</Text>
                 </TouchableOpacity>
             </View>
 
@@ -249,39 +255,46 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 12,
+        paddingHorizontal: 10,
         borderBottomWidth: 1,
         borderBottomColor: '#ddd',
     },
     supportText: {
-        marginLeft: 10,
         fontSize: 16,
+        marginLeft: 10,
         color: '#333',
     },
-    logoutButton: {
-        marginVertical: 20,
-        paddingVertical: 15,
-        alignItems: 'center',
-        backgroundColor: '#ff4d4d',
-        borderRadius: 8,
-        marginHorizontal: 20,
-    },
-    logoutButtonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: '600',
-    },
     badge: {
+        backgroundColor: '#ff0000',
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        justifyContent: 'center',
+        alignItems: 'center',
         position: 'absolute',
         top: -5,
-        right: -10,
-        backgroundColor: '#f44336',
-        borderRadius: 10,
-        paddingHorizontal: 5,
-        paddingVertical: 2,
+        right: -5,
     },
     badgeText: {
         color: '#fff',
         fontSize: 12,
+        fontWeight: 'bold',
+    },
+    logoutButton: {
+        backgroundColor: '#f44336',
+        marginTop: 20,
+        paddingVertical: 12,
+        borderRadius: 8,
+        marginHorizontal: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+    },
+    logoutButtonText: {
+        color: '#fff',
+        fontSize: 18,
+        textAlign: 'center',
         fontWeight: '600',
     },
 });

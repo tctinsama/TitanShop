@@ -1,4 +1,3 @@
-//src/navigation/AppNavigator.js
 import React, { useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -16,21 +15,13 @@ import ShopManagement from '../screens/client/ShopManagement';
 import ShopDetail from '../screens/client/ShopDetail';
 import AddProduct from '../screens/client/AddProduct';
 import OrderHistory from '../screens/client/OrderHistory';
-
-
-
-
+import NewsScreenDetail from '../screens/customer/NewsDetailScreen'; // Import màn hình mới
 
 const Stack = createNativeStackNavigator();
-
-
-
 
 const AppNavigator = () => {
   const [userId, setUserId] = useState(null);
 
-
-//src/navigation/AppNavigator.js
   return (
     <Stack.Navigator initialRouteName="Login">
       <Stack.Screen name="Login">
@@ -39,24 +30,21 @@ const AppNavigator = () => {
       <Stack.Screen name="Register" component={Register} />
       <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
       <Stack.Screen name="ProductDetail" component={ProductDetail} />
-      <Stack.Screen name="SearchResult" component={SearchResult} options={{ headerShown: false }}/>
-      <Stack.Screen name="CategoryScreen" component={CategoryScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name="SearchResult" component={SearchResult} options={{ headerShown: false }} />
+      <Stack.Screen name="CategoryScreen" component={CategoryScreen} options={{ headerShown: false }} />
       <Stack.Screen name="CartScreen" component={CartScreen} options={{
         headerShown: true,
         title: 'Giỏ Hàng',
-      }}  />
-      <Stack.Screen
-            name="HomeTabs"
-            component={MyTabs}
-            options={{ headerShown: false }}  // Ẩn header nếu muốn
-          />
+      }} />
+      <Stack.Screen name="HomeTabs" component={MyTabs} options={{ headerShown: false }} />
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="OrderSuccess" component={OrderSuccess} />
       <Stack.Screen name="ShopManagement" component={ShopManagement} />
       <Stack.Screen name="ShopDetail" component={ShopDetail} />
       <Stack.Screen name="AddProduct" component={AddProduct} />
-    <Stack.Screen name="OrderHistory" component={OrderHistory} />
-
+      <Stack.Screen name="OrderHistory" component={OrderHistory} />
+      {/* Thêm màn hình NewsScreenDetail */}
+      <Stack.Screen name="NewsScreenDetail" component={NewsScreenDetail} options={{ title: 'Chi Tiết Tin Tức' }} />
     </Stack.Navigator>
   );
 };

@@ -180,7 +180,7 @@ const ProductDetail = ({ route }) => {
                     <Text style={styles.ratingTitle}>Đánh giá:</Text>
                     <AirbnbRating
                         count={5}
-                        defaultRating={rating}
+                        defaultRating={rating || 0}
                         size={30}
                         onFinishRating={setRating}
                         showRating={false}
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     image: { width: '100%', height: 300, borderRadius: 8, marginBottom: 16 },
     detailsContainer: { flex: 1, backgroundColor: '#fff', padding: 16, borderRadius: 8 },
     productName: { fontSize: 26, fontWeight: 'bold', marginBottom: 8, color: '#333' },
-    productPrice: { fontSize: 22, fontWeight: '600', color: '#E91E63', marginBottom: 8 },
+    productPrice: { fontSize: 22, fontWeight: '600', color: '#000000', marginBottom: 8 },
     productDescription: { fontSize: 16, marginBottom: 16, color: '#555' },
     attributeContainer: { marginBottom: 16 },
     attributeTitle: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
@@ -228,10 +228,10 @@ const styles = StyleSheet.create({
     optionButton: {
         borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 8, margin: 4,
     },
-    optionButtonSelected: { backgroundColor: '#E91E63' },
+    optionButtonSelected: { backgroundColor: '#000000' },
     optionText: { fontSize: 16, color: '#333' },
     optionTextSelected: { color: '#fff' },
-    addToCartButton: { backgroundColor: '#E91E63', paddingVertical: 12, borderRadius: 8, marginBottom: 16 },
+    addToCartButton: { backgroundColor: '#FF9900', paddingVertical: 12, borderRadius: 8, marginBottom: 16 },
     addToCartButtonText: { fontSize: 18, fontWeight: 'bold', color: '#fff', textAlign: 'center' },
     ratingContainer: { marginBottom: 16 },
     ratingTitle: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     commentText: { fontSize: 16, color: '#333' },
     noCommentsText: { fontSize: 16, color: '#888' },
     commentInput: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 8, marginBottom: 8, height: 40 },
-    commentButton: { backgroundColor: '#E91E63', paddingVertical: 10, borderRadius: 8 },
+    commentButton: { backgroundColor: '#66CC00', paddingVertical: 10, borderRadius: 8 },
     commentButtonText: { fontSize: 16, fontWeight: 'bold', color: '#fff', textAlign: 'center' },
 });
 

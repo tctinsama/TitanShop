@@ -2,11 +2,12 @@ import React from 'react';
 import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import HomeScreen from '../screens/customer/HomeScreen';  
-import NotificationsScreen from '../screens/customer/NotificationsScreen';  
-import CartScreen from '../screens/customer/CartScreen';  
+import HomeScreen from '../screens/customer/HomeScreen';
+import NotificationsScreen from '../screens/customer/NotificationsScreen';
+import CartScreen from '../screens/customer/CartScreen';
 import Profile from '../screens/customer/Profile';
-
+import NewsScreen from '../screens/customer/NewsScreen';  // Import màn hình News
+import NewsDetailScreen from '../screens/customer/NewsDetailScreen';  // Import màn hình NewsDetail
 
 const Tab = createMaterialBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -14,16 +15,16 @@ const Stack = createNativeStackNavigator();
 function CartStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen 
-        name="CartScreen" 
-        component={CartScreen} 
-        options={{ title: 'Giỏ Hàng', headerShown: true }} 
+      <Stack.Screen
+        name="CartScreen"
+        component={CartScreen}
+        options={{ title: 'Giỏ Hàng', headerShown: true }}
       />
     </Stack.Navigator>
   );
 }
 
-function MyTabs({ userId }) {  
+function MyTabs({ userId }) {
   const renderIcon = (iconName, color) => (
     <MaterialCommunityIcons name={iconName} color={color} size={22} />
   );
@@ -42,31 +43,43 @@ function MyTabs({ userId }) {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        initialParams={{ userId }} 
+        initialParams={{ userId }}
         options={{
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color }) => renderIcon("home", color),
+          tabBarIcon: ({ color }) => renderIcon('home', color),
         }}
       />
       <Tab.Screen
         name="Cart"
         component={CartStack}
-        initialParams={{ userId }} 
+        initialParams={{ userId }}
         options={{
           tabBarLabel: 'Cart',
-          tabBarIcon: ({ color }) => renderIcon("cart", color),
+          tabBarIcon: ({ color }) => renderIcon('cart', color),
         }}
       />
+
+    <Tab.Screen
+        name="News"
+        component={NewsScreen}  // Thêm màn hình News
+        initialParams={{ userId }}
+        options={{
+          tabBarLabel: 'News',
+          tabBarIcon: ({ color }) => renderIcon('newspaper', color),
+        }}
+      />
+      
       <Tab.Screen
-          name="Profile"
-          component={Profile}
-          initialParams={{ userId }}
-          options={{
-            tabBarLabel: 'Profile',
-            tabBarIcon: ({ color }) => renderIcon("account", color), // Cập nhật biểu tượng cho Profile
-          }}
-        />
-      </Tab.Navigator>
+        name="Profile"
+        component={Profile}
+        initialParams={{ userId }}
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color }) => renderIcon('account', color),
+        }}
+      />
+      
+    </Tab.Navigator>
   );
 }
 

@@ -900,8 +900,88 @@ app.get('/api/comments/:productid', async (req, res) => {
 });
 
 
+const axios = require('axios');
+
+// API lấy tin tức từ New York Times
+app.get('/api/fashion-news', async (req, res) => {
+    try {
+        // API key của bạn từ NYT
+        const apiKey = '27N0YoLcDRkvQrNIGMzhhtjic07Lzmuh';  // Thay '123456' bằng API key thật của bạn
+        
+        // Định dạng URL yêu cầu với query parameter và API key
+        const url = `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=fashion&api-key=${apiKey}`;
+        
+        // Gửi yêu cầu HTTP tới New York Times API
+        const response = await axios.get(url);
+        
+        // Lấy dữ liệu từ response
+        const articles = response.data.response.docs;
+
+        // Tạo mảng tin tức từ dữ liệu nhận được
+        const news = articles.map(article => {
+            const imageUrl = article.multimedia && article.multimedia.length > 0 
+                ? `https://www.nytimes.com/${article.multimedia[0].url}`  // Kết hợp URL đầy đủ
+                : null;
+
+            return {
+                title: article.headline.main,  // Tiêu đề bài viết
+                excerpt: article.abstract,     // Mô tả bài viết
+                link: article.web_url,         // Liên kết bài viết
+                imageUrl: imageUrl            // Hình ảnh với URL đầy đủ
+            };
+        });
+
+        // Kiểm tra nếu không có tin tức
+        if (news.length === 0) {
+            return res.json({ success: true, message: 'Không có tin tức mới', news: [] });
+        }
+
+        // Trả về mảng tin tức cho client
+        res.json({ success: true, news });
+
+    } catch (error) {
+        console.error('Error fetching fashion news from NYT:', error);
+        res.status(500).json({ success: false, message: 'Có lỗi khi lấy tin tức từ New York Times', error: error.message });
+    }
+});
 
 
+app.get('/api/fashion-news/detail', async (req, res) => {
+    try {
+        const { newsLink } = req.query;  // Lấy newsLink từ query params
+
+        if (!newsLink) {
+            return res.status(400).json({ success: false, message: 'Không có liên kết tin tức' });
+        }
+
+        const apiKey = '27N0YoLcDRkvQrNIGMzhhtjic07Lzmuh';  // API key thật của bạn
+        const url = `https://api.nytimes.com/svc/search/v2/articlesearch.json?fq=web_url:("${newsLink}")&api-key=${apiKey}`;
+
+        const response = await axios.get(url);
+        const article = response.data.response.docs[0];  // Lấy bài viết đầu tiên từ kết quả tìm kiếm
+
+        if (!article) {
+            return res.status(404).json({ success: false, message: 'Bài viết không tìm thấy' });
+        }
+
+        // Lấy chi tiết bài viết
+        const articleDetail = {
+            title: article.headline.main,  // Tiêu đề bài viết
+            content: article.lead_paragraph,  // Đoạn giới thiệu đầu tiên
+            imageUrl: article.multimedia && article.multimedia.length > 0 
+                ? `https://www.nytimes.com/${article.multimedia[0].url}`
+                : null,  // Hình ảnh bài viết (nếu có)
+            fullContent: article.full_text || article.abstract || 'Nội dung chi tiết không có sẵn',  // Nội dung đầy đủ
+            date: article.pub_date,  // Ngày xuất bản
+            author: article.byline ? article.byline.original : 'Tác giả không xác định'  // Tác giả (nếu có)
+        };
+
+        res.json({ success: true, article: articleDetail });
+    } catch (error) {
+        console.error('Error fetching fashion news detail from NYT:', error);
+        res.status(500).json({ success: false, message: 'Có lỗi khi lấy chi tiết tin tức từ New York Times', error: error.message });
+    }
+});
 
 // Bắt đầu lắng nghe server
 app.listen(port, () => {

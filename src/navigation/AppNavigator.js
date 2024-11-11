@@ -17,7 +17,7 @@ import AddProduct from '../screens/client/AddProduct';
 import OrderHistory from '../screens/client/OrderHistory';
 import NewsScreenDetail from '../screens/customer/NewsDetailScreen'; // Import màn hình mới
 import ChatScreen from '../screens/customer/ChatScreen'; // Import màn hình mới
-
+import PurchaseOrder from '../screens/customer/PurchaseOrder';
 
 const Stack = createNativeStackNavigator();
 
@@ -45,6 +45,7 @@ const AppNavigator = () => {
       <Stack.Screen name="ShopDetail" component={ShopDetail} />
       <Stack.Screen name="AddProduct" component={AddProduct} />
       <Stack.Screen name="OrderHistory" component={OrderHistory} />
+      <Stack.Screen name="PurchaseOrder" component={PurchaseOrder} />
       {/* Thêm màn hình NewsScreenDetail */}
       <Stack.Screen name="NewsScreenDetail" component={NewsScreenDetail} options={{ title: 'Chi Tiết Tin Tức' }} />
       <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ title: 'Chat với trợ lí AI' }} />

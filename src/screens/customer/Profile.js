@@ -120,7 +120,7 @@ const Profile = () => {
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Đơn Mua</Text>
                 <View style={styles.purchaseRow}>
-                    <TouchableOpacity style={styles.iconContainer}>
+                    <TouchableOpacity style={styles.iconContainer} onPress={() => navigation.navigate('PurchaseOrder')}>
                         <MaterialCommunityIcons name="clipboard-check-outline" size={32} color="#007BFF" />
                         <Text style={styles.iconText}>Chờ xác nhận</Text>
                         {orderCounts.confirm > 0 && (

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { API_URL } from '@env';
+import { register } from '../services/authService';
 
 const Register = ({ navigation }) => {
     const [username, setUsername] = useState('');
@@ -21,46 +21,27 @@ const Register = ({ navigation }) => {
         }
 
         setLoading(true);
-
         try {
-            const response = await fetch(`${API_URL}/api/register`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username,
-                    password,
-                    fullname,
-                    phonenumber,
-                    address,
-                    email,
-                    dayofbirth,
-                    roleid: 4,
-                }),
+            const response = await register({
+                username,
+                password,
+                fullname,
+                phonenumber,
+                address,
+                email,
+                dayofbirth,
             });
 
-            setLoading(false);
-
-            if (!response.ok) {
-                const errorText = await response.json();
-                console.log('Error response:', errorText);
-                Alert.alert('Error', errorText.message || 'An error occurred');
-                return;
-            }
-
-            const data = await response.json();
-
-            if (data.success) {
+            if (response.success) {
                 Alert.alert('Success', 'Account created successfully');
                 navigation.navigate('Login');
             } else {
-                Alert.alert('Error', data.message || 'Registration failed');
+                Alert.alert('Error', response.message || 'Registration failed');
             }
         } catch (error) {
-            setLoading(false);
-            console.log('Error:', error);
             Alert.alert('Error', error.message || 'An unknown error occurred');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -77,80 +58,66 @@ const Register = ({ navigation }) => {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Register</Text>
-            <View style={styles.inputContainer}>
-                <TextInput
-                    placeholder="Username"
-                    value={username}
-                    onChangeText={setUsername}
-                    style={styles.input}
-                    placeholderTextColor="#666"
-                    autoCapitalize="none"
+            <TextInput
+                style={styles.input}
+                placeholder="Username"
+                value={username}
+                onChangeText={setUsername}
+                placeholderTextColor="#666"
+                autoCapitalize="none"
+            />
+            <TextInput
+                style={styles.input}
+                placeholder="Full Name"
+                value={fullname}
+                onChangeText={setFullname}
+                placeholderTextColor="#666"
+            />
+            <TextInput
+                style={styles.input}
+                placeholder="Phone Number"
+                value={phonenumber}
+                onChangeText={setPhonenumber}
+                keyboardType="numeric"
+                placeholderTextColor="#666"
+            />
+            <TextInput
+                style={styles.input}
+                placeholder="Address"
+                value={address}
+                onChangeText={setAddress}
+                placeholderTextColor="#666"
+            />
+            <TextInput
+                style={styles.input}
+                placeholder="Email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                placeholderTextColor="#666"
+            />
+            <TouchableOpacity style={styles.input} onPress={showDatepicker}>
+                <Text style={{ color: dayofbirth ? '#333' : '#666' }}>
+                    {dayofbirth ? `Date of Birth: ${dayofbirth}` : 'Select Date of Birth'}
+                </Text>
+            </TouchableOpacity>
+            {showDatePicker && (
+                <DateTimePicker
+                    testID="dateTimePicker"
+                    value={new Date()}
+                    mode="date"
+                    display="default"
+                    onChange={onDateChange}
                 />
-            </View>
-            <View style={styles.inputContainer}>
-                <TextInput
-                    placeholder="Full Name"
-                    value={fullname}
-                    onChangeText={setFullname}
-                    style={styles.input}
-                    placeholderTextColor="#666"
-                />
-            </View>
-            <View style={styles.inputContainer}>
-                <TextInput
-                    placeholder="Phone Number"
-                    value={phonenumber}
-                    onChangeText={setPhonenumber}
-                    keyboardType="numeric"
-                    style={styles.input}
-                    placeholderTextColor="#666"
-                />
-            </View>
-            <View style={styles.inputContainer}>
-                <TextInput
-                    placeholder="Address"
-                    value={address}
-                    onChangeText={setAddress}
-                    style={styles.input}
-                    placeholderTextColor="#666"
-                />
-            </View>
-            <View style={styles.inputContainer}>
-                <TextInput
-                    placeholder="Email"
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    style={styles.input}
-                    placeholderTextColor="#666"
-                />
-            </View>
-            <View style={styles.inputContainer}>
-                <TouchableOpacity onPress={showDatepicker}>
-                    <Text style={styles.input}>
-                        {dayofbirth ? `Date of Birth: ${dayofbirth}` : 'Select Date of Birth'}
-                    </Text>
-                </TouchableOpacity>
-                {showDatePicker && (
-                    <DateTimePicker
-                        testID="dateTimePicker"
-                        value={new Date()}
-                        mode="date"
-                        display="default"
-                        onChange={onDateChange}
-                    />
-                )}
-            </View>
-            <View style={styles.inputContainer}>
-                <TextInput
-                    placeholder="Password"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                    style={styles.input}
-                    placeholderTextColor="#666"
-                />
-            </View>
+            )}
+            <TextInput
+                style={styles.input}
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                placeholderTextColor="#666"
+            />
             <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
                 {loading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.buttonText}>Register</Text>}
             </TouchableOpacity>
@@ -162,42 +129,37 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 30,
-        backgroundColor: '#fff',
+        paddingHorizontal: 20,
+        backgroundColor: '#f0f4f7',
     },
     title: {
-        fontSize: 28,
+        fontSize: 32,
         fontWeight: 'bold',
         marginBottom: 30,
         textAlign: 'center',
-        color: '#000',
-    },
-    inputContainer: {
-        width: '100%',
-        backgroundColor: '#f9f9f9',
-        borderRadius: 8,
-        paddingHorizontal: 15,
-        marginBottom: 15,
-        borderColor: '#ccc',
-        borderWidth: 1,
+        color: '#333',
     },
     input: {
         height: 50,
-        fontSize: 16,
-        color: '#333',
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        paddingHorizontal: 15,
+        marginBottom: 15,
+        borderColor: '#ddd',
+        borderWidth: 1,
+        justifyContent: 'center',
     },
     button: {
-        backgroundColor: '#000',
-        paddingVertical: 12,
-        width: '100%',
-        borderRadius: 8,
-        marginTop: 15,
+        backgroundColor: '#007BFF',
+        paddingVertical: 15,
+        borderRadius: 10,
+        marginTop: 20,
         alignItems: 'center',
     },
     buttonText: {
-        fontSize: 16,
+        fontSize: 18,
         color: '#fff',
+        fontWeight: '600',
     },
 });
 

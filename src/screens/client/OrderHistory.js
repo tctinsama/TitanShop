@@ -40,13 +40,35 @@ const OrderHistory = () => {
     fetchOrders();
   }, [selectedStatus, userId]);
 
+ // Hàm cập nhật trạng thái đơn hàng từ Chờ Lấy Hàng (2) lên Đang Giao Hàng (3)
+  const handlePickupOrder = async (orderCode) => {
+    try {
+      const response = await axios.put(`${API_URL}/api/shop/orders/confirm`, {
+        orderCode,
+        newStatus: 3,
+      });
+
+      if (response.status === 200) {
+        Alert.alert("Thông báo", "Đơn hàng đã chuyển sang trạng thái 'Đang Giao Hàng'!");
+
+        setOrders(orders.map(order =>
+          order.ordercode === orderCode ? { ...order, orderstatusid: 3 } : order
+        ));
+      }
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      Alert.alert("Lỗi", "Không thể cập nhật trạng thái đơn hàng.");
+    }
+  };
+
+
   // Hàm cập nhật trạng thái đơn hàng
 const handleConfirmOrder = async (orderCode) => {
   try {
     // Gửi PUT request để cập nhật trạng thái đơn hàng
     const response = await axios.put(`${API_URL}/api/shop/orders/confirm`, {
-      orderCode,         // Mã đơn hàng cần cập nhật
-      newStatus: 2,      // Trạng thái mới là "Chờ Lấy Hàng" (orderStatusId = 2)
+      orderCode,
+      newStatus: 2,
     });
 
     if (response.status === 200) {
@@ -108,6 +130,15 @@ const handleConfirmOrder = async (orderCode) => {
                 <Text style={styles.orderTotal}>Tổng tiền: {item.total} VND</Text>
                 <Text style={styles.orderAddress}>Địa chỉ: {item.address}</Text>
                 <Text style={styles.orderPhone}>Số điện thoại: {item.phonenumber}</Text>
+
+                   {item.orderstatusid === 2 && (
+                     <TouchableOpacity
+                       style={styles.confirmButton}
+                       onPress={() => handlePickupOrder(item.ordercode)}
+                     >
+                       <Icon name="check" size={15} color="#fff" style={styles.iconStyle} />
+                     </TouchableOpacity>
+                   )}
 
                 {item.orderstatusid === 1 && (
                   <TouchableOpacity

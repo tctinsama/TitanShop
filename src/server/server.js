@@ -677,6 +677,39 @@ app.get('/api/order/count/:userId', (req, res) => {
     });
 });
 
+
+app.get('/api/order/details/:userId/:orderStatusId', (req, res) => {
+    const { userId, orderStatusId } = req.params;
+
+    const query = `
+        SELECT
+            o.ordercode,
+            o.total,
+            o.orderdate,
+            od.size,
+            od.color,
+            od.quantity,
+            p.name AS productName,
+            p.image AS productImage,
+            p.userid AS shopUserId,
+            (SELECT u.username FROM users u WHERE u.userid = p.userid) AS shopName
+        FROM \`order\` o
+        JOIN orderdetails od ON o.ordercode = od.ordercode
+        JOIN product p ON od.productid = p.productid
+        WHERE o.userid = ?
+          AND o.orderstatusid = ?;
+    `;
+
+    connection.query(query, [userId, orderStatusId], (error, results) => {
+        if (error) {
+            console.error('Lỗi khi lấy chi tiết đơn hàng:', error);
+            return res.status(500).json({ success: false, message: 'Lỗi khi lấy chi tiết đơn hàng' });
+        }
+
+        res.status(200).json(results);
+    });
+});
+
 // API để kiểm tra và áp dụng voucher
 app.post('/api/voucher/apply', (req, res) => {
     const { vouchercode, totalAmount, userId } = req.body;  // Lấy mã voucher, tổng số tiền và userId từ request body

@@ -19,7 +19,7 @@ const ProductList = () => {
             id: product.productid,
             name: product.name || "No name available",
             productdes: product.productdes || "No description available",
-            image: product.image ? `data:image/png;base64,${product.image}` : 'https://i.imgur.com/1tMFzp8.png',
+            image: product.image ? `${product.image}` : 'https://i.imgur.com/1tMFzp8.png',
             price: product.price != null ? product.price : 0,
           }));
           setProducts(filteredProducts);

@@ -1,20 +1,24 @@
-//src/components/ProductItem.js
 import React from 'react';
-
 import { View, Text, Dimensions, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 const ProductItem = ({ product }) => {
     const navigation = useNavigation();
 
-    // Kiểm tra nếu product.image tồn tại và không rỗng
     const hasImage = product.image && product.image.length > 0;
-    const isBase64 = product.image.startsWith('data:image/png;base64,');
-    const imageUrl = hasImage && !isBase64
-        ? `data:image/png;base64,${product.image}`
-        : hasImage
-        ? product.image
+    const isUrl = hasImage && (product.image.startsWith('http://') || product.image.startsWith('https://'));
+    const isBase64 = hasImage && product.image.startsWith('data:image');
+
+    const imageUrl = hasImage 
+        ? (isUrl ? product.image : (isBase64 ? product.image : 'https://example.com/default-image.png'))
         : 'https://example.com/default-image.png';
+
+    // Log kiểm tra
+    // console.log('Product:', product);
+    // console.log('Image URL:', imageUrl);
+    // console.log('Has Image:', hasImage);
+    // console.log('Is URL:', isUrl);
+    // console.log('Is Base64:', isBase64);
 
     return (
         <TouchableOpacity

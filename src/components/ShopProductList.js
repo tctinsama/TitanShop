@@ -1,4 +1,3 @@
-//src/components/ShopProductList.js
 import React, { useEffect, useState } from 'react';
 import { ScrollView, ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 import axios from 'axios';
@@ -14,14 +13,29 @@ const ShopProductList = ({ userId }) => {
         const fetchShopProducts = async () => {
             try {
                 const response = await axios.get(`${API_URL}/api/shop/products?userId=${userId}`);
+                
+                // Debug log để kiểm tra response
+                console.log('Fetched products:', response.data);
+
                 if (Array.isArray(response.data)) {
-                    const filteredProducts = response.data.map(product => ({
-                        id: product.productid,
-                        name: product.name || "No name available",
-                        productdes: product.productdes || "No description available",
-                        image: product.image ? product.image : 'https://example.com/default-image.png', // Hình ảnh mặc định
-                        price: product.price != null ? product.price : 0,
-                    }));
+                    const filteredProducts = response.data.map(product => {
+                        let imageUrl = 'https://example.com/default-image.png'; // Default image
+
+                        // Kiểm tra nếu image là URL hợp lệ hoặc Base64
+                        if (product.image && (product.image.startsWith('http://') || product.image.startsWith('https://'))) {
+                            imageUrl = product.image;
+                        } else if (product.image && product.image.startsWith('data:image')) {
+                            imageUrl = product.image;
+                        }
+
+                        return {
+                            id: product.productid,
+                            name: product.name || "No name available",
+                            productdes: product.productdes || "No description available",
+                            image: imageUrl, // Chỉ lấy URL hợp lệ hoặc Base64
+                            price: product.price != null ? product.price : 0,
+                        };
+                    });
                     setProducts(filteredProducts);
                 } else {
                     setError('Dữ liệu không hợp lệ.');
@@ -53,6 +67,7 @@ const ShopProductList = ({ userId }) => {
         );
     }
 
+    // Render các sản phẩm theo cặp (2 sản phẩm mỗi dòng)
     const rows = [];
     for (let i = 0; i < products.length; i += 2) {
         rows.push(

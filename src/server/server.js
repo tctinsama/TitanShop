@@ -1,13 +1,12 @@
-//src/server/server.js
+// src/server/server.js
 const express = require('express');
 const mysql = require('mysql');
 const bodyParser = require('body-parser');
+const cors = require('cors');
+const productRouter = require('./productRouter');
 
 const app = express();
 const port = 3000;
-
-app.use(bodyParser.json());
-app.use(express.json());
 
 // Kết nối đến cơ sở dữ liệu MySQL
 const connection = mysql.createConnection({
@@ -22,8 +21,25 @@ connection.connect((err) => {
     if (err) throw err;
     console.log('Kết nối tới MySQL thành công');
 });
-//src/server/server.js
-// Express.js route
+
+// Gán kết nối cơ sở dữ liệu cho app.locals để sử dụng trong các router khác
+app.locals.connection = connection;
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Sử dụng router
+app.use('/api', productRouter);
+
+// Route kiểm tra
+app.get('/', (req, res) => {
+    res.send('API is running');
+});
+
+// API để gửi yêu cầu khôi phục mật khẩu
 app.post('/api/reset-password', async (req, res) => {
     const { email } = req.body;
     const user = await User.findOne({ email });
@@ -49,6 +65,8 @@ app.post('/api/reset-password/:token', async (req, res) => {
 
     res.send("Mật khẩu đã được khôi phục thành công!");
 });
+
+
 
 //src/server/server.js
 // API đăng ký
@@ -140,17 +158,30 @@ app.get('/products', (req, res) => {
             return res.status(500).json({ message: 'Có lỗi xảy ra khi tải sản phẩm', success: false });
         }
 
-        // Chuyển đổi hình ảnh từ Buffer sang base64
         const cleanedResults = results.map(product => {
+            let imageUrl = null;
+
+            if (product.image) {
+                const imageBuffer = Buffer.from(product.image);
+                const imageString = imageBuffer.toString('utf-8');
+
+                if (imageString.startsWith('http://') || imageString.startsWith('https://')) {
+                    imageUrl = imageString;
+                } else {
+                    imageUrl = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
+                }
+            }
+
             return {
                 ...product,
-                image: product.image ? product.image.toString('base64') : null // Chuyển đổi Buffer sang base64
+                image: imageUrl
             };
         });
 
-        res.json(cleanedResults); // Trả về danh sách sản phẩm
+        res.json(cleanedResults); 
     });
 });
+
 
 // API tải danh mục
 app.get('/categories', (req, res) => {
@@ -732,22 +763,53 @@ app.get('/api/shop/products', (req, res) => {
     }
 
     const query = `SELECT * FROM product WHERE userid = ? AND status = 1`;
+    console.log('Executing query:', query, 'with userId:', userId); // Log truy vấn SQL
+
     connection.query(query, [userId], (error, results) => {
         if (error) {
-//            console.error('Error fetching shop products:', error.message); // Log lỗi
+            console.error('Error fetching shop products:', error.message); // Log lỗi
             return res.status(500).json({ error: 'An error occurred while fetching products' });
         }
 
-        // Chuyển đổi hình ảnh từ Buffer sang chuỗi Base64
-        const products = results.map(row => ({
-            ...row,
-            image: row.image ? row.image.toString('base64') : null // Chuyển đổi Buffer thành Base64
-        }));
+        console.log('Fetched results:', results); // Log dữ liệu trả về từ cơ sở dữ liệu
 
-//        console.log('Fetched products:', products); // Log sản phẩm đã lấy
-        res.json(products); // Trả về danh sách sản phẩm đã được chuyển đổi
+        // Xử lý hình ảnh cho từng sản phẩm
+        const cleanedResults = results.map(product => {
+            let imageUrl = null;
+            console.log('Processing product:', product.name); // Log từng sản phẩm đang được xử lý
+
+            if (product.image) {
+                const imageString = product.image.toString('utf-8');
+                console.log('Product image (Buffer to String):', imageString); // Log ảnh dưới dạng string
+
+                // Kiểm tra nếu ảnh là URL hợp lệ
+                if (imageString.startsWith('http://') || imageString.startsWith('https://')) {
+                    imageUrl = imageString; // Nếu là URL hợp lệ
+                    console.log('Valid image URL found:', imageUrl); // Log URL hợp lệ
+                } else {
+                    // Nếu không phải URL, chuyển Buffer thành chuỗi Base64
+                    imageUrl = `data:image/jpeg;base64,${Buffer.from(product.image).toString('base64')}`;
+                    console.log('Converted image to Base64:', imageUrl); // Log ảnh đã chuyển thành Base64
+                }
+            } else {
+                // Nếu không có ảnh, sử dụng ảnh mặc định
+                imageUrl = 'https://example.com/default-image.png';
+                console.log('No image provided, using default image:', imageUrl); // Log khi không có ảnh
+            }
+
+            return {
+                ...product,
+                image: imageUrl // Cập nhật trường image với URL hoặc Base64
+            };
+        });
+
+        console.log('Final cleaned results:', cleanedResults); // Log kết quả đã xử lý
+
+        res.json(cleanedResults); // Trả về danh sách sản phẩm đã xử lý
     });
 });
+
+
 
 //src/server/server.js
 app.get('/api/shop/orders', (req, res) => {
@@ -873,6 +935,47 @@ app.post('/api/comments/add', async (req, res) => {
         res.status(500).json({ success: false, message: 'Lỗi server' });
     }
 });
+
+const { uploadCloud } = require('./cloudinaryConfig'); // Import cấu hình upload
+const router = express.Router();
+
+router.post('/api/products', uploadCloud.single('image'), (req, res) => {
+    const { name, description, price, category, userId } = req.body;  // Lấy userId từ body thay vì query
+
+    // Kiểm tra nếu userId không tồn tại
+    if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    // Kiểm tra nếu có trường nào còn trống
+    if (!name || !description || !price || !category || !req.file) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Lấy URL ảnh từ file đã upload lên Cloudinary
+    const imageUrl = req.file.path;
+
+    // Câu truy vấn SQL để thêm sản phẩm mới vào bảng 'product'
+    const query = `
+        INSERT INTO product (name, productdes, price, categoryproductid, userid, status, image)
+        VALUES (?, ?, ?, ?, ?, 1, ?)
+    `;
+    
+    // Thực hiện truy vấn thêm sản phẩm vào database
+    connection.query(query, [name, description, price, category, userId, imageUrl], (error, results) => {
+        if (error) {
+            console.error('Error adding product:', error.message);
+            return res.status(500).json({ error: 'An error occurred while adding the product' });
+        }
+
+        res.json({ message: 'Product added successfully', productId: results.insertId });
+    });
+});
+
+
+module.exports = router;
+
+
 
 
 // GET /api/comments/:productid

@@ -1,162 +1,229 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, TouchableOpacity, Image, Alert } from 'react-native';
-import { launchImageLibrary } from 'react-native-image-picker';
+import { View, Text, TextInput, TouchableOpacity, Alert, Image, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import axios from 'axios';
+import { Picker } from '@react-native-picker/picker';
+import { API_URL } from '@env';
+import { useUser } from '../../context/UserContext';  // Đảm bảo bạn đã tạo context và cung cấp userId
 
 const AddProduct = () => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [categoryId, setCategoryId] = useState('');
-  const [image, setImage] = useState(null);
+  const [productData, setProductData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    category: '',
+    image: null,
+  });
+  const [categories, setCategories] = useState([]);
+  const [showPicker, setShowPicker] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { userId } = useUser();  // Đảm bảo rằng userId được cung cấp từ context
 
-  // Request permission for image picker (if needed for Android)
   useEffect(() => {
-    // Android-specific permission request can be handled here, 
-    // iOS will prompt automatically on first usage of image picker
+    fetchCategories();
   }, []);
 
-  const pickImage = () => {
-    launchImageLibrary(
-      {
-        mediaType: 'photo',
-        quality: 1,
-        includeBase64: false,
-      },
-      (response) => {
-        if (response.didCancel) {
-          console.log('User canceled image picker');
-        } else if (response.errorCode) {
-          console.log('ImagePicker Error: ', response.errorMessage);
-        } else {
-          setImage(response.assets[0].uri); // Save the image URI
-        }
-      }
-    );
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch(`${API_URL}/categories`);
+      const data = await response.json();
+      setCategories(data);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
   };
 
-  const handleUploadProduct = () => {
-    const formData = new FormData();
-    formData.append('userId', '123'); // userId cần được lấy từ context hoặc thông qua các phương thức đăng nhập
-    formData.append('name', name);
-    formData.append('description', description);
-    formData.append('price', price);
-    formData.append('categoryId', categoryId);
-
-    if (image) {
-      formData.append('image', {
-        uri: image,
-        type: 'image/jpeg',
-        name: 'product_image.jpg',
-      });
+  const handleImageUpload = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert('Permission Denied', 'You need to allow access to the media library to upload images.');
+      return;
     }
 
-    fetch('http://10.0.2.2:3000/api/shop/products/upload', {
-      method: 'POST',
-      body: formData,
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        alert('Product uploaded successfully!');
-        console.log(data);
-      })
-      .catch((error) => {
-        alert('Failed to upload product');
-        console.error(error);
-      });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (result && !result.canceled && result.assets && result.assets.length > 0) {
+      const fileUri = result.assets[0].uri;
+
+      try {
+        const imageUrl = await uploadImageToCloudinary(fileUri);
+        setProductData((prevData) => ({ ...prevData, image: imageUrl }));
+      } catch (error) {
+        console.error("Error uploading image to Cloudinary:", error);
+        Alert.alert('Error', 'There was an error uploading the image.');
+      }
+    }
   };
 
+  const uploadImageToCloudinary = async (fileUri) => {
+    const CLOUD_NAME = 'do0k0jkej';
+    const UPLOAD_PRESET = 'cloudtinsama';
+
+    const data = new FormData();
+    data.append('file', {
+      uri: fileUri,
+      type: 'image/jpeg',
+      name: 'uploaded_image.jpg',
+    });
+    data.append('upload_preset', UPLOAD_PRESET);
+
+    const response = await axios.post(
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+      data,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return response.data.secure_url;
+  };
+
+  const handleSaveProduct = async () => {
+    if (!productData.name || !productData.description || !productData.price || !productData.category || !productData.image) {
+        Alert.alert('Error', 'Please fill all fields and select an image.');
+        return;
+    }
+
+    if (!userId) {
+        Alert.alert('Error', 'User ID is required.');
+        return;
+    }
+
+    setLoading(true);
+
+    const price = parseFloat(productData.price);
+    if (isNaN(price) || price <= 0) {
+        Alert.alert('Error', 'Please enter a valid price.');
+        setLoading(false);
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('name', productData.name);
+    formData.append('description', productData.description);
+    formData.append('price', productData.price);
+    formData.append('category', productData.category);
+    formData.append('image', {
+        uri: productData.image,
+        type: 'image/jpeg',
+        name: 'uploaded_image.jpg',
+    });
+    formData.append('userId', userId);
+
+    try {
+        const response = await fetch(`${API_URL}/api/products`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error response from API:', errorText);
+            Alert.alert('Error', errorText);
+            return;
+        }
+
+        const jsonResponse = await response.json();
+        Alert.alert('Success', 'Product saved successfully!');
+        setProductData({
+            name: '',
+            description: '',
+            price: '',
+            category: '',
+            image: null,
+        });
+    } catch (error) {
+        console.error('Error saving product:', error);
+        Alert.alert('Error', 'There was an error saving the product.');
+    } finally {
+        setLoading(false);
+    }
+};
+
+  
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Thêm Sản Phẩm</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Add Product</Text>
 
-      <Text style={styles.label}>Tên sản phẩm</Text>
+      <Text style={styles.label}>Product Name</Text>
       <TextInput
         style={styles.input}
-        placeholder="Tên sản phẩm"
-        value={name}
-        onChangeText={setName}
+        placeholder="Enter product name"
+        value={productData.name}
+        onChangeText={(text) => setProductData((prev) => ({ ...prev, name: text }))}
       />
 
-      <Text style={styles.label}>Mô tả sản phẩm</Text>
+      <Text style={styles.label}>Product Description</Text>
       <TextInput
-        style={styles.input}
-        placeholder="Mô tả sản phẩm"
+        style={[styles.input, styles.textArea]}
+        placeholder="Enter product description"
         multiline
-        value={description}
-        onChangeText={setDescription}
+        value={productData.description}
+        onChangeText={(text) => setProductData((prev) => ({ ...prev, description: text }))}
       />
 
-      <Text style={styles.label}>Giá sản phẩm</Text>
+      <Text style={styles.label}>Product Price</Text>
       <TextInput
         style={styles.input}
-        placeholder="Giá sản phẩm"
+        placeholder="Enter product price"
         keyboardType="numeric"
-        value={price}
-        onChangeText={setPrice}
+        value={productData.price}
+        onChangeText={(text) => setProductData((prev) => ({ ...prev, price: text }))}
       />
 
-      <Text style={styles.label}>Danh mục</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Danh mục"
-        value={categoryId}
-        onChangeText={setCategoryId}
-      />
-
-      <Text style={styles.label}>Chọn ảnh sản phẩm</Text>
-      <TouchableOpacity onPress={pickImage} style={styles.imageUpload}>
-        <Text style={styles.imageUploadText}>Chọn ảnh</Text>
+      <Text style={styles.label}>Category</Text>
+      <TouchableOpacity style={styles.pickerContainer} onPress={() => setShowPicker(!showPicker)}>
+        <Text style={styles.selectedCategoryText}>
+          {productData.category ? `Selected: ${productData.category}` : 'Select Category'}
+        </Text>
       </TouchableOpacity>
+      {showPicker && (
+        <Picker
+          selectedValue={productData.category}
+          onValueChange={(value) => {
+            setProductData((prev) => ({ ...prev, category: value }));
+            setShowPicker(false);
+          }}
+          style={styles.picker}
+        >
+          <Picker.Item label="Select Category" value="" />
+          {categories.map((category) => (
+            <Picker.Item key={category.categoryproductid} label={category.categoryname} value={category.categoryproductid} />
+          ))}
+        </Picker>
+      )}
 
-      {image && <Image source={{ uri: image }} style={styles.imagePreview} />}
+      <Text style={styles.label}>Image</Text>
+      <TouchableOpacity style={styles.imageUpload} onPress={handleImageUpload}>
+        <Text style={styles.imageUploadText}>Select Image</Text>
+      </TouchableOpacity>
+      {productData.image && <Image source={{ uri: productData.image }} style={styles.imagePreview} />}
 
-      <Button title="Tải sản phẩm lên" onPress={handleUploadProduct} color="#4CAF50" />
-    </View>
+      <TouchableOpacity style={styles.button} onPress={handleSaveProduct} disabled={loading}>
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save Product</Text>}
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  label: {
-    fontSize: 16,
-    color: '#555',
-    marginBottom: 5,
-    marginTop: 10,
-  },
-  input: {
-    height: 45,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingLeft: 10,
-    backgroundColor: '#fff',
-    marginBottom: 10,
-  },
-  imageUpload: {
-    backgroundColor: '#ddd',
-    paddingVertical: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  imageUploadText: {
-    color: '#555',
-  },
-  imagePreview: {
-    width: 100,
-    height: 100,
-    marginTop: 10,
-    borderRadius: 5,
-    alignSelf: 'center',
-  },
+  container: { flexGrow: 1, padding: 20, backgroundColor: '#f5f5f5', alignItems: 'center' },
+  title: { fontSize: 26, fontWeight: 'bold', marginBottom: 15, color: '#333', textAlign: 'center' },
+  label: { fontSize: 16, color: '#555', marginBottom: 5, marginTop: 10, alignSelf: 'flex-start' },
+  input: { height: 45, borderColor: '#ccc', borderWidth: 1, borderRadius: 5, paddingLeft: 10, backgroundColor: '#fff', marginBottom: 10, width: '100%' },
+  textArea: { height: 100, textAlignVertical: 'top' },
+  pickerContainer: { height: 45, borderColor: '#ccc', borderWidth: 1, borderRadius: 5, backgroundColor: '#fff', marginBottom: 10, width: '100%', justifyContent: 'center', paddingHorizontal: 10 },
+  selectedCategoryText: { color: '#555' },
+  picker: { width: '100%' },
+  imageUpload: { backgroundColor: '#ddd', paddingVertical: 10, borderRadius: 5, alignItems: 'center', marginVertical: 10, width: '100%' },
+  imageUploadText: { color: '#555' },
+  imagePreview: { width: 100, height: 100, marginTop: 10, borderRadius: 5 },
+  button: { backgroundColor: '#4CAF50', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 5, alignItems: 'center', justifyContent: 'center', width: '100%', marginTop: 20 },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });
 
 export default AddProduct;

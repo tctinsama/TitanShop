@@ -1,65 +1,122 @@
-// src/screens/client/AddProduct.js
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, Button, TouchableOpacity, Image, Alert } from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
 
 const AddProduct = () => {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [categoryId, setCategoryId] = useState('');
   const [image, setImage] = useState(null);
 
-  const handleImageUpload = () => {
-    // Xử lý tải lên hình ảnh
+  // Request permission for image picker (if needed for Android)
+  useEffect(() => {
+    // Android-specific permission request can be handled here, 
+    // iOS will prompt automatically on first usage of image picker
+  }, []);
+
+  const pickImage = () => {
+    launchImageLibrary(
+      {
+        mediaType: 'photo',
+        quality: 1,
+        includeBase64: false,
+      },
+      (response) => {
+        if (response.didCancel) {
+          console.log('User canceled image picker');
+        } else if (response.errorCode) {
+          console.log('ImagePicker Error: ', response.errorMessage);
+        } else {
+          setImage(response.assets[0].uri); // Save the image URI
+        }
+      }
+    );
+  };
+
+  const handleUploadProduct = () => {
+    const formData = new FormData();
+    formData.append('userId', '123'); // userId cần được lấy từ context hoặc thông qua các phương thức đăng nhập
+    formData.append('name', name);
+    formData.append('description', description);
+    formData.append('price', price);
+    formData.append('categoryId', categoryId);
+
+    if (image) {
+      formData.append('image', {
+        uri: image,
+        type: 'image/jpeg',
+        name: 'product_image.jpg',
+      });
+    }
+
+    fetch('http://10.0.2.2:3000/api/shop/products/upload', {
+      method: 'POST',
+      body: formData,
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        alert('Product uploaded successfully!');
+        console.log(data);
+      })
+      .catch((error) => {
+        alert('Failed to upload product');
+        console.error(error);
+      });
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.title}>Thêm Sản Phẩm</Text>
 
       <Text style={styles.label}>Tên sản phẩm</Text>
-      <TextInput style={styles.input} placeholder="Tên sản phẩm" />
+      <TextInput
+        style={styles.input}
+        placeholder="Tên sản phẩm"
+        value={name}
+        onChangeText={setName}
+      />
 
       <Text style={styles.label}>Mô tả sản phẩm</Text>
-      <TextInput style={styles.input} placeholder="Mô tả sản phẩm" multiline />
+      <TextInput
+        style={styles.input}
+        placeholder="Mô tả sản phẩm"
+        multiline
+        value={description}
+        onChangeText={setDescription}
+      />
 
       <Text style={styles.label}>Giá sản phẩm</Text>
-      <TextInput style={styles.input} placeholder="Giá sản phẩm" keyboardType="numeric" />
+      <TextInput
+        style={styles.input}
+        placeholder="Giá sản phẩm"
+        keyboardType="numeric"
+        value={price}
+        onChangeText={setPrice}
+      />
 
       <Text style={styles.label}>Danh mục</Text>
-      <TextInput style={styles.input} placeholder="Tên danh mục" />
+      <TextInput
+        style={styles.input}
+        placeholder="Danh mục"
+        value={categoryId}
+        onChangeText={setCategoryId}
+      />
 
-      <Text style={styles.label}>Mô tả danh mục</Text>
-      <TextInput style={styles.input} placeholder="Mô tả danh mục" multiline />
-
-      <Text style={styles.label}>Thương hiệu</Text>
-      <TextInput style={styles.input} placeholder="Tên thương hiệu" />
-
-      <Text style={styles.label}>Xuất xứ</Text>
-      <TextInput style={styles.input} placeholder="Quốc gia" />
-
-      <Text style={styles.label}>Giới tính</Text>
-      <TextInput style={styles.input} placeholder="Giới tính (Nam, Nữ, Unisex)" />
-
-      <Text style={styles.label}>Kích cỡ</Text>
-      <TextInput style={styles.input} placeholder="Kích cỡ (S, M, L...)" />
-
-      <Text style={styles.label}>Màu sắc</Text>
-      <TextInput style={styles.input} placeholder="Màu sắc" />
-
-      <Text style={styles.label}>Số lượng</Text>
-      <TextInput style={styles.input} placeholder="Số lượng sản phẩm" keyboardType="numeric" />
-
-      <Text style={styles.label}>Hình ảnh</Text>
-      <TouchableOpacity style={styles.imageUpload} onPress={handleImageUpload}>
+      <Text style={styles.label}>Chọn ảnh sản phẩm</Text>
+      <TouchableOpacity onPress={pickImage} style={styles.imageUpload}>
         <Text style={styles.imageUploadText}>Chọn ảnh</Text>
       </TouchableOpacity>
+
       {image && <Image source={{ uri: image }} style={styles.imagePreview} />}
 
-      <Button title="Lưu sản phẩm" onPress={() => {/* Xử lý lưu sản phẩm */}} color="#4CAF50" />
-    </ScrollView>
+      <Button title="Tải sản phẩm lên" onPress={handleUploadProduct} color="#4CAF50" />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
     padding: 20,
     backgroundColor: '#f5f5f5',
   },
@@ -67,7 +124,6 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: 'bold',
     marginBottom: 15,
-    color: '#333',
   },
   label: {
     fontSize: 16,

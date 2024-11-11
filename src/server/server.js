@@ -7,6 +7,7 @@ const app = express();
 const port = 3000;
 
 app.use(bodyParser.json());
+app.use(express.json());
 
 // Kết nối đến cơ sở dữ liệu MySQL
 const connection = mysql.createConnection({
@@ -49,58 +50,50 @@ app.post('/api/reset-password/:token', async (req, res) => {
     res.send("Mật khẩu đã được khôi phục thành công!");
 });
 
-// API đăng ký
-app.post('/register', (req, res) => {
-    const { username, password, fullname, phonenumber, address, email, dayofbirth } = req.body;
-    console.log('Received data:', req.body);
-    // Kiểm tra xem tên người dùng đã tồn tại hay chưa
-    connection.query('SELECT * FROM user WHERE username = ?', [username], (error, results) => {
-        if (error) {
-            console.error('Error querying database for existing user:', error);
-            return res.status(500).json({ success: false, message: 'Có lỗi xảy ra' });
-        }
+// POST /api/register
+app.post('/api/register', async (req, res) => {
+    const { username, password, fullname, phonenumber, address, email, dayofbirth, roleid } = req.body;
 
-        if (results.length > 0) {
-            return res.json({ success: false, message: 'Tên người dùng đã tồn tại' });
-        }
+    // Kiểm tra dữ liệu đầu vào
+    if (!username || !password || !fullname || !phonenumber || !email || !dayofbirth) {
+        return res.status(400).json({ success: false, message: 'Thông tin thiếu' });
+    }
 
-        // Tạo người dùng mới
-        const newUser = {
-            userid: null, // NULL nếu bạn đang sử dụng AUTO_INCREMENT trong cơ sở dữ liệu
-            username,
-            password,
-            fullname,
-            phonenumber,
-            address,
-            email,
-            dayofbirth,
-            img: null, // Bạn có thể để NULL hoặc một giá trị mặc định
-            status: 1, // 1 có thể biểu thị tài khoản đang hoạt động
-        };
-
-        connection.query('INSERT INTO user SET ?', newUser, (err, result) => {
-            if (err) {
-                console.error('Error inserting new user:', err);
-                return res.status(500).json({ success: false, message: 'Có lỗi xảy ra khi đăng ký' });
-            }
-
-            const newRole = {
-                roleid: null, // NULL nếu bạn đang sử dụng AUTO_INCREMENT
-                rolename: 'customer',
-                approval: 1,
-                userid: result.insertId, // Lấy userid vừa được tạo
-            };
-
-            connection.query('INSERT INTO role SET ?', newRole, (err) => {
-                if (err) {
-                    return res.status(500).json({ success: false, message: 'Có lỗi xảy ra khi phân quyền' });
-                }
-
-                return res.json({ success: true, message: 'Đăng ký thành công' });
+    try {
+        // Kiểm tra xem tên người dùng đã tồn tại chưa
+        const checkUserQuery = 'SELECT * FROM user WHERE username = ?';
+        const [userResults] = await new Promise((resolve, reject) => {
+            connection.query(checkUserQuery, [username], (error, results) => {
+                if (error) reject(error);
+                else resolve(results);
             });
         });
-    });
+
+        if (userResults.length > 0) {
+            return res.status(400).json({ success: false, message: 'Tên người dùng đã tồn tại' });
+        }
+
+        // Thêm người dùng vào bảng 'user'
+        const insertQuery = 'INSERT INTO user (username, password, fullname, phonenumber, address, email, dayofbirth, roleid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+        await new Promise((resolve, reject) => {
+            connection.query(insertQuery, [username, password, fullname, phonenumber, address, email, dayofbirth, roleid || 4], (error, results) => {
+                if (error) reject(error);
+                else resolve(results);
+            });
+        });
+
+        res.status(201).json({ success: true, message: 'Tạo tài khoản thành công' });
+
+    } catch (error) {
+        console.error('Lỗi khi đăng ký:', error);
+        res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
 });
+
+
+
+
+
 
 
 // API đăng nhập

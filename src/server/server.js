@@ -7,7 +7,6 @@ const app = express();
 const port = 3000;
 
 app.use(bodyParser.json());
-app.use(express.json());
 
 // Kết nối đến cơ sở dữ liệu MySQL
 const connection = mysql.createConnection({
@@ -52,7 +51,7 @@ app.post('/api/reset-password/:token', async (req, res) => {
 
 // POST /api/register
 app.post('/api/register', async (req, res) => {
-    const { username, password, fullname, phonenumber, address, email, dayofbirth, roleid } = req.body;
+    const { username, password, fullname, phonenumber, address, email, dayofbirth, status, roleid } = req.body;
 
     // Kiểm tra dữ liệu đầu vào
     if (!username || !password || !fullname || !phonenumber || !email || !dayofbirth) {
@@ -64,21 +63,32 @@ app.post('/api/register', async (req, res) => {
         const checkUserQuery = 'SELECT * FROM user WHERE username = ?';
         const [userResults] = await new Promise((resolve, reject) => {
             connection.query(checkUserQuery, [username], (error, results) => {
-                if (error) reject(error);
-                else resolve(results);
+                if (error) {
+                    console.error('Lỗi khi kiểm tra tên người dùng:', error);
+                    return reject(error);
+                }
+                resolve(results);
             });
         });
 
-        if (userResults.length > 0) {
+        // Kiểm tra nếu userResults không phải là mảng hoặc có độ dài > 0
+        if (Array.isArray(userResults) && userResults.length > 0) {
             return res.status(400).json({ success: false, message: 'Tên người dùng đã tồn tại' });
         }
 
+        // Mặc định giá trị 'status' là 1 nếu không có
+        const userStatus = status || 1;  // Nếu không có status, mặc định là 1
+        const userRole = roleid || 4;    // Nếu không có roleid, mặc định là 4
+
         // Thêm người dùng vào bảng 'user'
-        const insertQuery = 'INSERT INTO user (username, password, fullname, phonenumber, address, email, dayofbirth, roleid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+        const insertQuery = 'INSERT INTO user (username, password, fullname, phonenumber, address, email, dayofbirth, status, roleid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
         await new Promise((resolve, reject) => {
-            connection.query(insertQuery, [username, password, fullname, phonenumber, address, email, dayofbirth, roleid || 4], (error, results) => {
-                if (error) reject(error);
-                else resolve(results);
+            connection.query(insertQuery, [username, password, fullname, phonenumber, address, email, dayofbirth, userStatus, userRole], (error, results) => {
+                if (error) {
+                    console.error('Lỗi khi thêm người dùng:', error);
+                    return reject(error);
+                }
+                resolve(results);
             });
         });
 
@@ -89,11 +99,6 @@ app.post('/api/register', async (req, res) => {
         res.status(500).json({ success: false, message: 'Lỗi server' });
     }
 });
-
-
-
-
-
 
 
 // API đăng nhập
@@ -601,7 +606,6 @@ app.get('/api/products/:productId/attributes', (req, res) => {
     });
 });
 // src/server/server.js
-// src/server/server.js
 app.get('/api/order/count/:userId', (req, res) => {
     const userId = req.params.userId;
     const query = `
@@ -831,6 +835,51 @@ app.put('/api/shop/orders/confirm', (req, res) => {
     res.status(200).json({ message: 'Order status updated successfully' });
   });
 });
+
+///api cấu hình để thêm sản phẩm cho shop 
+
+// src/server/server.js
+
+const multer = require('multer');
+const path = require('path');
+
+// Cấu hình lưu trữ hình ảnh sử dụng Multer
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/'); // Lưu hình ảnh trong thư mục 'uploads'
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + path.extname(file.originalname)); // Đổi tên file theo thời gian
+    }
+});
+
+const upload = multer({ storage: storage });
+
+// API để tải sản phẩm lên
+app.post('/api/shop/products/upload', upload.single('image'), (req, res) => {
+    const { userId, name, description, price, categoryId } = req.body;
+    const image = req.file ? req.file.filename : null; // Lấy tên file hình ảnh từ Multer
+
+    // Kiểm tra thông tin đầu vào
+    if (!userId || !name || !description || !price || !categoryId) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const query = `INSERT INTO product (userid, name, description, price, categoryId, image, status) 
+                    VALUES (?, ?, ?, ?, ?, ?, 1)`; // Trạng thái mặc định là 1 (hiển thị)
+
+    // Lưu sản phẩm vào cơ sở dữ liệu
+    connection.query(query, [userId, name, description, price, categoryId, image], (error, results) => {
+        if (error) {
+            console.error('Error uploading product:', error);
+            return res.status(500).json({ error: 'An error occurred while uploading the product' });
+        }
+
+        res.status(201).json({ message: 'Product uploaded successfully', productId: results.insertId });
+    });
+});
+
+
 
 
 // POST /api/comments/add

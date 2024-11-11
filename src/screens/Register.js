@@ -36,31 +36,29 @@ const Register = ({ navigation }) => {
                     address,
                     email,
                     dayofbirth,
-                    roleid: 4,
+                    status: 1,
+                    roleid: 3,
                 }),
             });
 
-            setLoading(false);
-
-            if (!response.ok) {
-                const errorText = await response.json();
-                console.log('Error response:', errorText);
-                Alert.alert('Error', errorText.message || 'An error occurred');
-                return;
-            }
-
             const data = await response.json();
-
-            if (data.success) {
-                Alert.alert('Success', 'Account created successfully');
-                navigation.navigate('Login');
+            
+            if (response.ok) {
+                if (data.success) {
+                    Alert.alert('Success', 'Account created successfully');
+                    navigation.navigate('Login');
+                } else {
+                    Alert.alert('Error', data.message || 'Registration failed');
+                }
             } else {
-                Alert.alert('Error', data.message || 'Registration failed');
+                console.log('Server error response:', data);
+                Alert.alert('Error', data.message || 'An error occurred');
             }
         } catch (error) {
-            setLoading(false);
             console.log('Error:', error);
             Alert.alert('Error', error.message || 'An unknown error occurred');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -71,7 +69,7 @@ const Register = ({ navigation }) => {
     const onDateChange = (event, selectedDate) => {
         const currentDate = selectedDate || dayofbirth;
         setShowDatePicker(false);
-        setDayofbirth(currentDate.toISOString().split('T')[0]);
+        setDayofbirth(currentDate.toISOString().split('T')[0]); // Format YYYY-MM-DD
     };
 
     return (

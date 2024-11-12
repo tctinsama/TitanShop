@@ -25,7 +25,6 @@ const ShopProductItem = ({ product }) => {
                 resizeMode="cover"
             />
             <Text style={styles.productName}>{product.name}</Text>
-            <Text style={styles.productDescription}>{product.productdes}</Text>
             <Text style={styles.productPrice}>${product.price}</Text>
         </TouchableOpacity>
     );

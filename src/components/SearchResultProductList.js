@@ -12,14 +12,25 @@ const SearchResultProductList = ({ products }) => {
         );
     }
 
-    // Chuyển đổi dữ liệu sản phẩm để tạo thuộc tính cho hình ảnh
-    const formattedProducts = products.map(product => ({
-        id: product.productid,
-        name: product.name || "No name available",
-        productdes: product.productdes || "No description available",
-        image: product.image ? `data:image/png;base64,${product.image}` : 'https://i.imgur.com/1tMFzp8.png',
-        price: product.price != null ? product.price : 0,
-    }));
+    // Chuyển đổi dữ liệu sản phẩm để tạo thuộc tính cho hình ảnh với logic kiểm tra URL hoặc Base64
+    const formattedProducts = products.map(product => {
+        const hasImage = product.image && product.image.length > 0;
+        const isUrl = hasImage && (product.image.startsWith('http://') || product.image.startsWith('https://'));
+        const isBase64 = hasImage && product.image.startsWith('data:image');
+    
+        const imageUrl = hasImage 
+            ? (isUrl ? product.image : (isBase64 ? product.image : `data:image/png;base64,${product.image}`))
+            : 'https://i.imgur.com/1tMFzp8.png'; // Hình ảnh mặc định nếu không có
+    
+        return {
+            id: product.productid,
+            name: product.name || "No name available",
+            productdes: product.productdes || "No description available",
+            image: imageUrl,
+            price: product.price != null ? product.price : 0,
+        };
+    });
+    
 
     const rows = [];
     for (let i = 0; i < formattedProducts.length; i += 2) {

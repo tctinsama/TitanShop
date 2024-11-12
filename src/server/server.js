@@ -577,8 +577,6 @@ app.get('/api/user/:userId', (req, res) => {
 app.get('/api/search', (req, res) => {
     const { search } = req.query;
 
-    console.log('search:', search);
-
     let query = `
         SELECT p.productid, p.name, p.productdes, p.price, p.image, c.categoryname
         FROM product p
@@ -593,43 +591,86 @@ app.get('/api/search', (req, res) => {
         params.push(searchTerm, searchTerm);
     }
 
-    console.log('Final Query:', query);
-    console.log('Params:', params);
-
     connection.query(query, params, (error, results) => {
         if (error) {
             console.error('Database error:', error);
             return res.status(500).json({ success: false, message: 'Có lỗi xảy ra khi tìm kiếm sản phẩm' });
         }
 
-        const cleanedResults = results.map(product => ({
-            ...product,
-            image: product.image ? product.image.toString('base64') : null
-        }));
+        // Xử lý ảnh để kiểm tra URL hoặc chuyển đổi thành Base64
+        const cleanedResults = results.map(product => {
+            let imageUrl = null;
+
+            if (product.image) {
+                const imageBuffer = Buffer.from(product.image);
+                const imageString = imageBuffer.toString('utf-8');
+
+                if (imageString.startsWith('http://') || imageString.startsWith('https://')) {
+                    imageUrl = imageString;
+                } else {
+                    imageUrl = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
+                }
+            }
+
+            return {
+                ...product,
+                image: imageUrl
+            };
+        });
 
         res.json({ success: true, results: cleanedResults });
     });
 });
 
-// API tải sản phẩm theo danh mục
+
+// API tải sản phẩm theo danh mục và từ khóa tìm kiếm
 app.get('/api/products/category/:categoryId', (req, res) => {
     const categoryId = req.params.categoryId;
-    const query = 'SELECT productid, name, productdes, price, image FROM product WHERE categoryproductid = ?';
+    const searchTerm = req.query.search || '';  // Lấy từ khóa tìm kiếm từ query string (nếu có)
 
-    connection.query(query, [categoryId], (error, results) => {
+    let query = `
+        SELECT productid, name, productdes, price, image
+        FROM product
+        WHERE categoryproductid = ?
+    `;
+
+    // Thêm điều kiện tìm kiếm vào truy vấn SQL nếu có từ khóa tìm kiếm
+    if (searchTerm) {
+        query += ` AND (name LIKE ? OR productdes LIKE ?)`;
+    }
+
+    // Thực hiện truy vấn với điều kiện tìm kiếm
+    connection.query(query, [categoryId, `%${searchTerm}%`, `%${searchTerm}%`], (error, results) => {
         if (error) {
             console.error('Database error:', error);
-            return res.status(500).json({ message: 'Có lỗi xảy ra khi tải sản phẩm theo danh mục', success: false });
+            return res.status(500).json({ success: false, message: 'Có lỗi xảy ra khi tải sản phẩm' });
         }
 
-        const cleanedResults = results.map(product => ({
-            ...product,
-            image: product.image ? product.image.toString('base64') : null // Chuyển đổi Buffer sang base64
-        }));
+        const cleanedResults = results.map(product => {
+            let imageUrl = null;
 
-        res.json(cleanedResults); // Trả về danh sách sản phẩm theo danh mục
+            if (product.image) {
+                const imageBuffer = Buffer.from(product.image);
+                const imageString = imageBuffer.toString('utf-8');
+
+                if (imageString.startsWith('http://') || imageString.startsWith('https://')) {
+                    imageUrl = imageString;
+                } else {
+                    imageUrl = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
+                }
+            }
+
+            return {
+                ...product,
+                image: imageUrl
+            };
+        });
+
+        res.json({ success: true, results: cleanedResults });
     });
 });
+
+
 
 
 // API LẤY COLOR AND SIZE

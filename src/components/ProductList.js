@@ -1,5 +1,3 @@
-
-//src/components/ProductList.js
 import React, { useEffect, useState } from 'react';
 import { ScrollView, ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 import axios from 'axios';
@@ -11,32 +9,40 @@ const ProductList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await axios.get(`${API_URL}/products`);
-        if (Array.isArray(response.data)) {
-          const filteredProducts = response.data.map(product => ({
-            id: product.productid,
-            name: product.name || "No name available",
-            productdes: product.productdes || "No description available",
-            image: product.image ? `${product.image}` : 'https://i.imgur.com/1tMFzp8.png',
-            price: product.price != null ? product.price : 0,
-          }));
-          setProducts(filteredProducts);
-        } else {
-          setError('Dữ liệu không hợp lệ.');
-        }
-      } catch (error) {
-        setError(error.response ? error.response.data : error.message);
-        console.error('Error fetching products:', error);
-      } finally {
-        setLoading(false);
+  // Hàm tải lại sản phẩm
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/products`);
+      if (Array.isArray(response.data)) {
+        const filteredProducts = response.data.map(product => ({
+          id: product.productid,
+          name: product.name || "No name available",
+          productdes: product.productdes || "No description available",
+          image: product.image ? `${product.image}` : 'https://i.imgur.com/1tMFzp8.png',
+          price: product.price != null ? product.price : 0,
+        }));
+        setProducts(filteredProducts);
+      } else {
+        setError('Dữ liệu không hợp lệ.');
       }
-    };
+    } catch (error) {
+      setError(error.response ? error.response.data : error.message);
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchProducts();
-  }, []); // Đảm bảo useEffect luôn được gọi sau các useState
+  // Gọi API một lần khi component mount và sau đó gọi lại định kỳ
+  useEffect(() => {
+    fetchProducts(); // Gọi API một lần khi component mount
+
+    // Đặt interval để gọi lại API mỗi 10 giây (hoặc thời gian bạn muốn)
+    const interval = setInterval(fetchProducts, 10000); // 10000ms = 10 giây
+
+    // Dọn dẹp interval khi component unmount
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (

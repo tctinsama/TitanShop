@@ -6,16 +6,13 @@ import { useNavigation } from '@react-navigation/native';
 const ShopProductItem = ({ product }) => {
     const navigation = useNavigation();
 
-    // Kiểm tra nếu product.image tồn tại và là chuỗi
-    const hasImage = product.image && typeof product.image === 'string' && product.image.length > 0;
+    const hasImage = product.image && product.image.length > 0;
+    const isUrl = hasImage && (product.image.startsWith('http://') || product.image.startsWith('https://'));
+    const isBase64 = hasImage && product.image.startsWith('data:image');
 
-    // Xác định xem hình ảnh có ở định dạng Base64 hay không
-    const isBase64 = hasImage && (product.image.startsWith('data:image/png;base64,') || product.image.startsWith('data:image/jpeg;base64,'));
-
-    // Thiết lập URL cho hình ảnh
-    const imageUrl = hasImage
-        ? (isBase64 ? product.image : `data:image/png;base64,${product.image}`) // Nếu là Base64, dùng trực tiếp; nếu không, thêm tiền tố
-        : 'https://example.com/default-image.png'; // Hình ảnh mặc định nếu không có
+    const imageUrl = hasImage 
+        ? (isUrl ? product.image : (isBase64 ? product.image : 'https://example.com/default-image.png'))
+        : 'https://example.com/default-image.png';
 
     return (
         <TouchableOpacity

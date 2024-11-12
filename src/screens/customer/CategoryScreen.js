@@ -1,12 +1,10 @@
-//src/screens/customer/CategoryScreen.js
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, TextInput, Image, StyleSheet, ScrollView, TouchableOpacity, Text } from "react-native";
+import { SafeAreaView, View, TextInput, Image, StyleSheet, ScrollView, TouchableOpacity, Text, Alert } from "react-native";
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useUser } from '../../context/UserContext';
 import SearchResultProductList from "../../components/SearchResultProductList";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { API_URL } from '@env';
-
 
 const CategoryScreen = () => {
     const { userId } = useUser();
@@ -23,8 +21,7 @@ const CategoryScreen = () => {
     
             if (!response.ok) {
                 if (response.status === 404) {
-                    // Giỏ hàng trống, đặt số lượng giỏ hàng là 0
-                    setCartQuantity(0);
+                    setCartQuantity(0); // Giỏ hàng trống
                     return;
                 }
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -54,10 +51,19 @@ const CategoryScreen = () => {
 
     const fetchProducts = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/products/category/${categoryId}`);
+            let url = `${API_URL}/api/products/category/${categoryId}`;
+            if (searchTerm.trim() !== '') {
+                // Thêm tham số search vào URL khi người dùng nhập từ khóa tìm kiếm
+                url += `?search=${encodeURIComponent(searchTerm)}`;
+            }
+    
+            console.log('Fetching products from URL:', url); // Log URL
+            const response = await fetch(url);
             const data = await response.json();
+            // console.log('API Response Data:', data); // Log response data
+    
             if (response.ok) {
-                setProducts(data);
+                setProducts(data.results);
             } else {
                 setProducts([]);
             }
@@ -65,6 +71,7 @@ const CategoryScreen = () => {
             console.error('Failed to fetch products', error);
         }
     };
+    
 
     useEffect(() => {
         if (userId) {
@@ -74,9 +81,9 @@ const CategoryScreen = () => {
 
     useEffect(() => {
         if (categoryId) {
-            fetchProducts();
+            fetchProducts(); // Gọi lại API khi searchTerm hoặc categoryId thay đổi
         }
-    }, [categoryId]);
+    }, [categoryId, searchTerm]);
 
     return (
         <SafeAreaView style={styles.safeArea}>

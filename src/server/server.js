@@ -265,6 +265,7 @@ app.get('/api/groupcart/:userid', (req, res) => {
 
 // API tải giỏ hàng
 
+// API tải giỏ hàng
 app.get('/api/cart/:userid', (req, res) => {
     const { userid } = req.params;
     const query = `
@@ -286,14 +287,33 @@ app.get('/api/cart/:userid', (req, res) => {
             return res.status(404).json({ success: false, message: 'Giỏ hàng của bạn trống' });
         }
 
-        const cleanedResults = results.map(item => ({
-            ...item,
-            image: item.image ? item.image.toString('base64') : null,
-        }));
+        // Xử lý ảnh theo dạng base64
+        const cleanedResults = results.map(item => {
+            let imageUrl = null;
+
+            if (item.image) {
+                const imageBuffer = Buffer.from(item.image); // Chuyển đổi ảnh sang buffer
+                const imageString = imageBuffer.toString('utf-8');
+
+                if (imageString.startsWith('http://') || imageString.startsWith('https://')) {
+                    // Nếu ảnh là URL, không cần xử lý thêm
+                    imageUrl = imageString;
+                } else {
+                    // Nếu ảnh không phải URL, chuyển thành base64
+                    imageUrl = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
+                }
+            }
+
+            return {
+                ...item,
+                image: imageUrl // Trả về ảnh dưới dạng base64 hoặc URL
+            };
+        });
 
         res.json({ success: true, cartItems: cleanedResults });
     });
 });
+
 
 
 

@@ -6,41 +6,39 @@ import { useUser } from '../../context/UserContext';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { API_URL } from '@env';
 
-
-
 const CartScreen = () => {
     const { userId } = useUser();
     const navigation = useNavigation();
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(false);
 
-
     // Fetch cart items from API
-const fetchCartItems = async () => {
-    setLoading(true);
-    try {
-        const response = await fetch(`${API_URL}/api/cart/${userId}`);
+    const fetchCartItems = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch(`${API_URL}/api/cart/${userId}`);
 
-        if (!response.ok) {
-            if (response.status === 404) {
-                setCartItems([]);  // Giỏ hàng trống
-            } else {
-                throw new Error(`Error: ${response.status}`);
+            if (!response.ok) {
+                if (response.status === 404) {
+                    setCartItems([]);  // Giỏ hàng trống
+                } else {
+                    throw new Error(`Error: ${response.status}`);
+                }
             }
-        }
 
-        const data = await response.json();
-        if (data?.success && data.cartItems.length > 0) {
-            setCartItems(data.cartItems);
-        } else {
-            setCartItems([]);  // Giỏ hàng trống
+            const data = await response.json();
+            if (data?.success && data.cartItems.length > 0) {
+                setCartItems(data.cartItems);
+            } else {
+                setCartItems([]);  // Giỏ hàng trống
+            }
+        } catch (error) {
+            console.error('Error fetching cart items:', error);
+        } finally {
+            setLoading(false);
         }
-    } catch (error) {
-        console.error('Error fetching cart items:', error);
-    } finally {
-        setLoading(false);
-    }
-};
+    };
+
     useEffect(() => {
         if (userId) fetchCartItems();
     }, [userId]);
@@ -109,62 +107,72 @@ const fetchCartItems = async () => {
     };
 
     // Render items for each shop
-   const renderShopItems = ({ shopName, items }) => (
-       <View style={styles.shopContainer}>
-           {/* Tên shop và icon */}
-           <View style={styles.shopNameContainer}>
-               <Icon name="store" size={24} color="#4CAF50" style={styles.shopNameIcon} />
-               <Text style={styles.shopName}>{shopName}</Text>
-           </View>
+    const renderShopItems = ({ shopName, items }) => (
+        <View style={styles.shopContainer}>
+            {/* Tên shop và icon */}
+            <View style={styles.shopNameContainer}>
+                <Icon name="store" size={24} color="#4CAF50" style={styles.shopNameIcon} />
+                <Text style={styles.shopName}>{shopName}</Text>
+            </View>
 
-           {/* Hiển thị các sản phẩm trong shop */}
-           {items.map((item) => (
-               <View key={item.cartitemid} style={styles.cartItem}>
-                   {/* Hình ảnh sản phẩm */}
-                   <Image source={{ uri: `data:image/jpeg;base64,${item.image}` }} style={styles.productImage} />
+            {/* Hiển thị các sản phẩm trong shop */}
+            {items.map((item) => {
+                // Xử lý ảnh sản phẩm
+                const hasImage = item.image && item.image.length > 0;
+                const isUrl = hasImage && (item.image.startsWith('http://') || item.image.startsWith('https://'));
+                const isBase64 = hasImage && item.image.startsWith('data:image');
 
-                   {/* Chi tiết sản phẩm */}
-                   <View style={styles.productDetails}>
-                       <Text style={styles.productName}>{item.name}</Text>
-                       <Text style={styles.productPrice}>${(item.price || 0).toFixed(2)}</Text>
+                const imageUrl = hasImage 
+                    ? (isUrl ? item.image : (isBase64 ? item.image : 'https://example.com/default-image.png'))
+                    : 'https://example.com/default-image.png';
 
-                       {/* Thuộc tính của sản phẩm */}
-                       <View style={styles.cartItemAttributes}>
-                           <Text style={styles.cartItemAttributesText}>{item.color}, {item.size}</Text>
-                       </View>
+                return (
+                    <View key={item.cartitemid} style={styles.cartItem}>
+                        {/* Hình ảnh sản phẩm */}
+                        <Image source={{ uri: imageUrl }} style={styles.productImage} resizeMode="cover" />
 
-                       {/* Cập nhật số lượng */}
-                       <View style={styles.quantityContainer}>
-                           <TouchableOpacity
-                               style={styles.quantityButton}
-                               onPress={() => handleUpdateQuantity(item.cartitemid, item.quantity - 1)}
-                           >
-                               <Text style={styles.quantityButtonText}>-</Text>
-                           </TouchableOpacity>
-                           <Text style={styles.productQuantity}>{item.quantity}</Text>
-                           <TouchableOpacity
-                               style={styles.quantityButton}
-                               onPress={() => handleUpdateQuantity(item.cartitemid, item.quantity + 1)}
-                           >
-                               <Text style={styles.quantityButtonText}>+</Text>
-                           </TouchableOpacity>
-                       </View>
+                        {/* Chi tiết sản phẩm */}
+                        <View style={styles.productDetails}>
+                            <Text style={styles.productName}>{item.name}</Text>
+                            <Text style={styles.productPrice}>${(item.price || 0).toFixed(2)}</Text>
 
-                       {/* Xóa sản phẩm khỏi giỏ */}
-                       <TouchableOpacity
-                           style={styles.removeIconButton}
-                           onPress={() => handleRemoveItem(item.cartitemid)}
-                       >
-                           <Icon name="delete" size={24} color="#FF5252" />
-                       </TouchableOpacity>
-                   </View>
-               </View>
-           ))}
-       </View>
-   );
+                            {/* Thuộc tính của sản phẩm */}
+                            <View style={styles.cartItemAttributes}>
+                                <Text style={styles.cartItemAttributesText}>{item.color}, {item.size}</Text>
+                            </View>
+
+                            {/* Cập nhật số lượng */}
+                            <View style={styles.quantityContainer}>
+                                <TouchableOpacity
+                                    style={styles.quantityButton}
+                                    onPress={() => handleUpdateQuantity(item.cartitemid, item.quantity - 1)}
+                                >
+                                    <Text style={styles.quantityButtonText}>-</Text>
+                                </TouchableOpacity>
+                                <Text style={styles.productQuantity}>{item.quantity}</Text>
+                                <TouchableOpacity
+                                    style={styles.quantityButton}
+                                    onPress={() => handleUpdateQuantity(item.cartitemid, item.quantity + 1)}
+                                >
+                                    <Text style={styles.quantityButtonText}>+</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* Xóa sản phẩm khỏi giỏ */}
+                            <TouchableOpacity
+                                style={styles.removeIconButton}
+                                onPress={() => handleRemoveItem(item.cartitemid)}
+                            >
+                                <Icon name="delete" size={24} color="#FF5252" />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                );
+            })}
+        </View>
+    );
 
     const groupedCartItems = groupByShop(cartItems);
-
 
     return (
         <View style={styles.container}>
@@ -186,8 +194,8 @@ const fetchCartItems = async () => {
                         {/* Nút thanh toán */}
                         <TouchableOpacity
                             style={styles.checkoutButton}
-
-                            onPress={() => navigation.navigate('Checkout', { totalAmount: getTotalPrice(), cartItems })}>
+                            onPress={() => navigation.navigate('Checkout', { totalAmount: getTotalPrice(), cartItems })}
+                        >
                             <Text style={styles.checkoutButtonText}>Thanh toán</Text>
                         </TouchableOpacity>
                     </View>

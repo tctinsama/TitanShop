@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Dimensions, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
-const ProductItem = ({ product }) => {
+const ProductItem = ({ product, style }) => {
     const navigation = useNavigation();
 
     const hasImage = product.image && product.image.length > 0;
@@ -13,25 +13,20 @@ const ProductItem = ({ product }) => {
         ? (isUrl ? product.image : (isBase64 ? product.image : 'https://example.com/default-image.png'))
         : 'https://example.com/default-image.png';
 
-    // Log kiểm tra
-    // console.log('Product:', product);
-    // console.log('Image URL:', imageUrl);
-    // console.log('Has Image:', hasImage);
-    // console.log('Is URL:', isUrl);
-    // console.log('Is Base64:', isBase64);
-
     return (
         <TouchableOpacity
-            style={styles.container}
+            style={[styles.container, style]} // Apply additional style from parent component
             onPress={() => navigation.navigate('ProductDetail', { product })}
         >
-            <Image
-                source={{ uri: imageUrl }}
-                style={styles.image}
-                resizeMode="cover"
-            />
-            <Text style={styles.productName}>{product.name}</Text>
-            <Text style={styles.productPrice}>${product.price}</Text>
+            <View style={styles.imageWrapper}>
+                <Image
+                    source={{ uri: imageUrl }}
+                    style={styles.image}
+                    resizeMode="cover"
+                />
+            </View>
+            <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
+            <Text style={styles.productPrice}>đ{product.price}</Text>
         </TouchableOpacity>
     );
 };
@@ -40,35 +35,37 @@ const screenWidth = Dimensions.get('window').width;
 
 const styles = StyleSheet.create({
     container: {
-        width: screenWidth * 0.4,
         backgroundColor: "#FFFFFF",
-        borderRadius: 6,
+        borderRadius: 5,
         padding: 10,
-        margin: 5,
-        elevation: 3,
+        marginBottom: 10,
+        elevation: 5,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+    },
+    imageWrapper: {
+        borderRadius: 10,
+        overflow: "hidden",
+        marginBottom: 8,
     },
     image: {
-        borderRadius: 4,
-        height: screenWidth * 0.3,
-        marginBottom: 10,
+        height: screenWidth * 0.4,
+        width: "100%",
     },
     productName: {
-        color: "#000000",
-        fontSize: 14,
-        fontWeight: "bold",
+        color: "#333333",
+        fontSize: 16,
+        fontWeight: "400",
         marginBottom: 5,
-    },
-    productDescription: {
-        color: "#000000",
-        fontSize: 12,
-        marginBottom: 5,
-        width: screenWidth * 0.38,
+        textAlign: "left",
     },
     productPrice: {
-        color: "#000000",
+        color: "#FF5722",
         fontSize: 14,
         fontWeight: "bold",
-        marginBottom: 3,
+        textAlign: "left",
     },
 });
 

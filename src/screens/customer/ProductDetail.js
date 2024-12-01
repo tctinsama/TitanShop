@@ -219,7 +219,36 @@ const ProductDetail = ({ route }) => {
                         <Text style={styles.commentButtonText}>Gửi bình luận</Text>
                     </TouchableOpacity>
                 </View>
+
+            
+        
+
             </View>
+
+
+            {/* Shop Info Section */}
+            <View style={styles.shopInfoContainer}>
+                <TouchableOpacity
+                    style={styles.shopCard}
+                    onPress={() => {
+                        Alert.alert('Thông báo', 'Điều hướng đến trang shop');
+                        // Điều hướng đến trang danh sách sản phẩm của shop (cần kết hợp Navigation)
+                    }}
+                >
+                    <Image
+                        source={require('../../../assets/images/carousel_1.png')} 
+                        style={styles.shopImage}
+                        resizeMode="cover"
+                    />
+                    <View style={styles.shopDetails}>
+                        <Text style={styles.shopName}>Shop không xác định</Text>
+                        <Text style={styles.shopDescription}>
+                            Chưa có thông tin chi tiết về shop này. Nhấn vào để tìm hiểu thêm.
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+            </View>
+
         </ScrollView>
     );
 };
@@ -252,6 +281,42 @@ const styles = StyleSheet.create({
     commentInput: { borderColor: '#ccc', borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 10 },
     commentButton: { backgroundColor: '#00CC33', padding: 10, borderRadius: 8, alignItems: 'center' },
     commentButtonText: { color: '#fff', fontWeight: '600' },
+    shopInfoContainer: {
+        marginTop: 20,
+        marginBottom: 20,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    shopCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 12,
+    },
+    shopImage: {
+        width: 80,
+        height: 80,
+        borderRadius: 40, // Hình tròn
+        marginRight: 16,
+    },
+    shopDetails: {
+        flex: 1,
+    },
+    shopName: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 4,
+    },
+    shopDescription: {
+        fontSize: 14,
+        color: '#777',
+    },
 });
 
 export default ProductDetail;

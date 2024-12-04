@@ -129,7 +129,7 @@ const Profile = () => {
                             </View>
                         )}
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconContainer}>
+                    <TouchableOpacity style={styles.iconContainer} onPress={() => navigation.navigate('PurchaseOrder')}>
                         <Ionicons name="cube-outline" size={32} color="#FF9900" />
                         <Text style={styles.iconText}>Chờ giao hàng</Text>
                         {orderCounts.pickup > 0 && (
@@ -138,7 +138,7 @@ const Profile = () => {
                             </View>
                         )}
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconContainer}>
+                    <TouchableOpacity style={styles.iconContainer} onPress={() => navigation.navigate('PurchaseOrder')}>
                         <MaterialCommunityIcons name="truck-delivery-outline" size={32} color="#FF4D4D" />
                         <Text style={styles.iconText}>Đang giao</Text>
                         {orderCounts.deliver > 0 && (

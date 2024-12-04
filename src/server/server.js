@@ -893,12 +893,12 @@ app.post('/api/role/update-approval', (req, res) => {
 });
 
 
-/// dưới ni là phần của shop
+/// dưới đây là phần của shop
 // API lấy sản phẩm cho cửa hàng
 //src/server/server.js
 app.get('/api/shop/products', (req, res) => {
     const { userId } = req.query;
-    console.log('Received user ID:', userId); // Log userId nhận được
+    
 
     if (!userId) {
         console.error('No user ID provided');

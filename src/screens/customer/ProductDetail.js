@@ -18,7 +18,6 @@ const ProductDetail = ({ route }) => {
 
     const [refreshComments, setRefreshComments] = useState(false);  // State to refresh comments
 
-    // Fetch product attributes and comments
     useEffect(() => {
         const fetchAttributes = async () => {
             try {
@@ -99,6 +98,11 @@ const ProductDetail = ({ route }) => {
             return;
         }
 
+        if (rating === 0) {
+            Alert.alert('Thông báo', 'Vui lòng chọn đánh giá');
+            return;
+        }
+
         try {
             const response = await fetch(`${API_URL}/api/comments/add`, {
                 method: 'POST',
@@ -108,7 +112,7 @@ const ProductDetail = ({ route }) => {
                     userid: userId,
                     content: newComment,
                     stars: rating,
-                    username: fullname,  // Include username instead of fullname
+                    username: fullname,
                 }),
             });
     
@@ -180,12 +184,13 @@ const ProductDetail = ({ route }) => {
                 <View style={styles.ratingContainer}>
                     <Text style={styles.ratingTitle}>Đánh giá:</Text>
                     <AirbnbRating
-                    count={rating || 5}  // Default to 5 if rating is undefined or null
-                    defaultRating={rating || 0}  // Default to 0 if rating is undefined or null
-                    size={30}  // Size is always 30
-                    onFinishRating={setRating}
-                    showRating={false}  // Hide the rating text
+                        count={5}
+                        defaultRating={rating}
+                        size={30}
+                        onFinishRating={setRating}
+                        showRating={false}
                     />
+                    {rating === 0 && <Text style={styles.warningText}>Vui lòng chọn đánh giá</Text>}
                 </View>
 
                 {/* Comments Section */}
@@ -197,7 +202,7 @@ const ProductDetail = ({ route }) => {
                         comments.map((comment, index) => (
                             <View key={index} style={styles.commentBox}>
                                 <Text style={styles.commentUser}>
-                                    {comment.userid === userId ? fullname : comment.username} {/* Use username */}
+                                    {comment.userid === userId ? fullname : comment.username}
                                 </Text> 
                                 <Text style={styles.commentText}>{comment.content}</Text>
                             </View>
@@ -214,7 +219,36 @@ const ProductDetail = ({ route }) => {
                         <Text style={styles.commentButtonText}>Gửi bình luận</Text>
                     </TouchableOpacity>
                 </View>
+
+            
+        
+
             </View>
+
+
+            {/* Shop Info Section */}
+            <View style={styles.shopInfoContainer}>
+                <TouchableOpacity
+                    style={styles.shopCard}
+                    onPress={() => {
+                        Alert.alert('Thông báo', 'Điều hướng đến trang shop');
+                        // Điều hướng đến trang danh sách sản phẩm của shop (cần kết hợp Navigation)
+                    }}
+                >
+                    <Image
+                        source={require('../../../assets/images/carousel_1.png')} 
+                        style={styles.shopImage}
+                        resizeMode="cover"
+                    />
+                    <View style={styles.shopDetails}>
+                        <Text style={styles.shopName}>Shop không xác định</Text>
+                        <Text style={styles.shopDescription}>
+                            Chưa có thông tin chi tiết về shop này. Nhấn vào để tìm hiểu thêm.
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+            </View>
+
         </ScrollView>
     );
 };
@@ -227,52 +261,62 @@ const styles = StyleSheet.create({
     productPrice: { fontSize: 22, fontWeight: '600', color: '#000000', marginBottom: 8 },
     productDescription: { fontSize: 16, marginBottom: 16, color: '#555' },
     attributeContainer: { marginBottom: 16 },
-    attributeTitle: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
+    attributeTitle: { fontSize: 18, fontWeight: '600', color: '#333', marginBottom: 8 },
     optionContainer: { flexDirection: 'row', flexWrap: 'wrap' },
-    optionButton: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        marginRight: 8,
-        marginBottom: 8,
+    optionButton: { padding: 10, borderWidth: 1, borderColor: '#ccc', borderRadius: 4, marginRight: 8, marginBottom: 8 },
+    optionButtonSelected: { backgroundColor: '#000', borderColor: '#000' },
+    optionText: { color: '#333' },
+    optionTextSelected: { color: '#fff' },
+    addToCartButton: { backgroundColor: '#FF9900', padding: 15, borderRadius: 8, alignItems: 'center', marginBottom: 20 },
+    addToCartButtonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+    ratingContainer: { marginBottom: 20 },
+    ratingTitle: { fontSize: 18, fontWeight: '600', marginBottom: 10, color: '#333' },
+    warningText: { color: 'red', fontSize: 14, marginTop: 5 },
+    commentsContainer: { marginTop: 20 },
+    commentsTitle: { fontSize: 20, fontWeight: '600', marginBottom: 10, color: '#333' },
+    noCommentsText: { color: '#999', fontStyle: 'italic', marginBottom: 10 },
+    commentBox: { marginBottom: 12 },
+    commentUser: { fontWeight: 'bold', color: '#333', marginBottom: 4 },
+    commentText: { color: '#555' },
+    commentInput: { borderColor: '#ccc', borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 10 },
+    commentButton: { backgroundColor: '#00CC33', padding: 10, borderRadius: 8, alignItems: 'center' },
+    commentButtonText: { color: '#fff', fontWeight: '600' },
+    shopInfoContainer: {
+        marginTop: 20,
+        marginBottom: 20,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 5,
     },
-    optionButtonSelected: {
-        backgroundColor: '#000000',
-        borderColor: '#000000',
+    shopCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 12,
     },
-    optionText: { fontSize: 16, color: '#333' },
-    optionTextSelected: {
-        color: '#fff',
+    shopImage: {
+        width: 80,
+        height: 80,
+        borderRadius: 40, // Hình tròn
+        marginRight: 16,
     },
-    addToCartButton: {
-        backgroundColor: '#FF9900',
-        paddingVertical: 14,
-        borderRadius: 8,
-        marginTop: 16,
+    shopDetails: {
+        flex: 1,
     },
-    addToCartButtonText: {
+    shopName: {
         fontSize: 18,
-        color: '#fff',
-        textAlign: 'center',
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 4,
     },
-    ratingContainer: { marginTop: 16, marginBottom: 24 },
-    ratingTitle: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
-    commentsContainer: { marginTop: 24 },
-    commentsTitle: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
-    noCommentsText: { fontSize: 16, color: '#aaa' },
-    commentBox: { marginBottom: 16 },
-    commentUser: { fontSize: 14, fontWeight: '600', color: '#333' },
-    commentText: { fontSize: 16, color: '#555' },
-    commentInput: { padding: 10, borderWidth: 1, borderRadius: 8, borderColor: '#ddd', marginTop: 16 },
-    commentButton: {
-        backgroundColor: '#28a745',
-        paddingVertical: 10,
-        borderRadius: 8,
-        marginTop: 8,
+    shopDescription: {
+        fontSize: 14,
+        color: '#777',
     },
-    commentButtonText: { fontSize: 16, color: '#fff', textAlign: 'center' },
 });
 
 export default ProductDetail;

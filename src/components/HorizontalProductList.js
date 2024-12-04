@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, ActivityIndicator, View, Text } from 'react-native';
+import { ScrollView, ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 import axios from 'axios';
 import ProductItem from './ProductItem';
 import { API_URL } from '@env';
 
-const ProductList = () => {
+const HorizontalProductList = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,7 +39,7 @@ const ProductList = () => {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0000ff" />
       </View>
     );
@@ -47,22 +47,46 @@ const ProductList = () => {
 
   if (error) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: 'red' }}>{error}</Text>
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView horizontal>
-      {products.map(product => (
-        <ProductItem 
-          key={product.id}
-          product={product} // Truyền toàn bộ sản phẩm
-        />
+    <ScrollView horizontal contentContainerStyle={styles.scrollContainer}>
+      {products.map((product, index) => (
+        <View key={index} style={styles.productItem}>
+          <ProductItem product={product} style={styles.productItemStyle} />
+        </View>
       ))}
     </ScrollView>
   );
 };
 
-export default ProductList;
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: 'red',
+  },
+  scrollContainer: {
+    paddingHorizontal: 10,
+  },
+  productItem: {
+    marginRight: 15, // Ensure some spacing between items in horizontal layout
+  },
+  productItemStyle: {
+    width: 200, // Fixed width to ensure proper horizontal layout
+  },
+});
+
+export default HorizontalProductList;

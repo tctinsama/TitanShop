@@ -813,6 +813,55 @@ app.post('/api/voucher/apply', (req, res) => {
         });
     });
 });
+
+// API lấy danh sách đơn hàng theo userid
+app.get('/api/users/orders', (req, res) => {
+    const { userId } = req.query;
+
+    if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    const query = `
+        SELECT
+            o.ordercode,
+            o.phonenumber,
+            o.orderdate,
+            o.orderstatusid,
+            o.total,
+            od.size,
+            od.color,
+            od.quantity,
+            od.brand,
+            p.name,
+            p.userid,
+            p.image,
+            u.username,
+            os.name AS orderstatus
+
+        FROM \`order\` o
+        LEFT JOIN \`orderdetails\` od ON o.ordercode = od.ordercode
+        LEFT JOIN \`product\` p ON od.productid = p.productid
+        LEFT JOIN \`user\` u ON p.userid = u.userid
+        LEFT JOIN \`orderstatus\` os ON o.orderstatusid = os.orderstatusid
+        WHERE o.userid = ?
+    `;
+
+    connection.query(query, [userId], (error, results) => {
+        if (error) {
+            return res.status(500).json({ error: 'An error occurred while fetching orders' });
+        }
+
+        const updatedResults = results.map(order => ({
+            ...order,
+            image: order.image || 'https://cdn.baohatinh.vn/images/39684358df72d8450cb598151e035aa1a46802966dd6797e1b4b2218d7c576faa14d2895bbf52b223fa5e2040f9668c3/106d2143531t9099l9.jpg',
+        }));
+
+        res.json(updatedResults);
+    });
+});
+
+
 //src/server/server.js
 // API cập nhật approval của role
 app.post('/api/role/update-approval', (req, res) => {

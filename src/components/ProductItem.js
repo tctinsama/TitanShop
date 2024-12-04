@@ -1,3 +1,4 @@
+//src/components/ProductItem.js
 import React from 'react';
 import { View, Text, Dimensions, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -31,7 +32,7 @@ const ProductItem = ({ product }) => {
                 resizeMode="cover"
             />
             <Text style={styles.productName}>{product.name}</Text>
-            <Text style={styles.productDescription}>{product.productdes}</Text>
+
             <Text style={styles.productPrice}>${product.price}</Text>
         </TouchableOpacity>
     );

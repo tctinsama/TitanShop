@@ -1,28 +1,72 @@
-// src/screen/customer/PurchaseOrder.js
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, FlatList } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+//src/screens/customer/PurchaseOrder.js
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, FlatList, Image } from 'react-native';
+import { useUser } from '../../context/UserContext'; // Import UserContext
+import Icon from 'react-native-vector-icons/MaterialIcons';
+
+import { API_URL } from '@env';
 
 const PurchaseOrder = ({ route }) => {
-  const [orders, setOrders] = useState([
-    // Thêm một số đơn hàng mẫu để hiển thị tạm
-    { ordercode: 'DH001', orderdate: '2024-11-10', total: '200,000', address: 'Hà Nội', phonenumber: '0123456789' },
-    { ordercode: 'DH002', orderdate: '2024-11-11', total: '500,000', address: 'TP HCM', phonenumber: '0987654321' },
-  ]);
-
+  const { userId } = useUser();
+  const [orders, setOrders] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState(null);
 
   const statuses = [
-    { label: 'Tất cả', value: 'all' },
-    { label: 'Đang xử lý', value: 'processing' },
-    { label: 'Đã giao', value: 'delivered' },
-    { label: 'Đã hủy', value: 'cancelled' },
+     { label: 'Chờ Xác Nhận', value: 1 },
+     { label: 'Chờ Lấy Hàng', value: 2 },
+     { label: 'Đang Giao Hàng', value: 3 },
+     { label: 'Giao Thành Công', value: 4 },
+     { label: 'Đã Hủy', value: 5 },
+     { label: 'Trả Hàng', value: 6 },
   ];
+
+    useEffect(() => {
+      const fetchOrders = async () => {
+        try {
+          let url = `${API_URL}/api/users/orders?userId=${userId}`;
+          if (selectedStatus !== null) {
+            url += `&orderStatusId=${selectedStatus}`; // Thêm tham số lọc
+          }
+          const response = await fetch(url);
+          const data = await response.json();
+          setOrders(data);
+        } catch (error) {
+          console.error('Error fetching orders:', error);
+        }
+      };
+
+      if (userId) {
+        fetchOrders();
+      }
+    }, [userId, selectedStatus]);
+
+
+   const getImageUrl = (image) => {
+
+     if (!image || typeof image !== 'string') {
+       return 'https://cdn.baohatinh.vn/images/39684358df72d8450cb598151e035aa1a46802966dd6797e1b4b2218d7c576faa14d2895bbf52b223fa5e2040f9668c3/106d2143531t9099l9.jpg';
+     }
+
+     // Nếu URL là Base64 hoặc hợp lệ
+     if (image.startsWith('data:image') || image.startsWith('http')) {
+       return image;
+     }
+
+     // Nếu URL không hợp lệ, trả về ảnh mặc định
+     return 'https://cdn.baohatinh.vn/images/39684358df72d8450cb598151e035aa1a46802966dd6797e1b4b2218d7c576faa14d2895bbf52b223fa5e2040f9668c3/106d2143531t9099l9.jpg';
+   };
+
+const filteredOrders = selectedStatus
+  ? orders.filter((order) => order.orderstatusid === selectedStatus)
+  : orders;
+
+
+
+
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Danh Sách Đơn Hàng</Text>
-
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -51,22 +95,40 @@ const PurchaseOrder = ({ route }) => {
       </ScrollView>
 
       <View style={styles.orderList}>
+
         {orders.length === 0 ? (
           <Text style={styles.noOrdersText}>Không có đơn hàng nào.</Text>
         ) : (
           <FlatList
-            data={orders}
+            data={filteredOrders}
             keyExtractor={(item, index) => item.ordercode + index.toString()}
             renderItem={({ item }) => (
               <View style={styles.orderItem}>
-                <Text style={styles.orderCode}>Đơn hàng: {item.ordercode}</Text>
-                <Text style={styles.orderDate}>Ngày: {item.orderdate}</Text>
+                <View style={styles.row}>
+                  <Image
+                    source={{ uri: getImageUrl(item.image) }}
+                    style={styles.productImage}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.column}>
+                    <View style={styles.row}>
+                      <Icon name="store" size={16} color="#333" style={styles.icon} />
+                      <Text style={styles.username}>{item.username}</Text>
+                      <Text style={styles.orderStatus}>{item.orderstatus}</Text>
+                    </View>
+                    <View style={styles.row}>
+                      <Text style={styles.details}>{item.color}, {item.size}</Text>
+                      <Text style={styles.quantity}>x{item.quantity}</Text>
+                    </View>
+                    <Text style={styles.orderDate}>Ngày: {item.orderdate}</Text>
+                  </View>
+                </View>
                 <Text style={styles.orderTotal}>Tổng tiền: {item.total} VND</Text>
-                <Text style={styles.orderAddress}>Địa chỉ: {item.address}</Text>
-                <Text style={styles.orderPhone}>Số điện thoại: {item.phonenumber}</Text>
               </View>
             )}
           />
+
+
         )}
       </View>
     </View>
@@ -163,6 +225,68 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 30,
   },
+    orderItem: {
+      padding: 15,
+      marginVertical: 8,
+      backgroundColor: '#fff',
+      borderRadius: 10,
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 3 },
+      borderWidth: 1,
+      borderColor: '#eee',
+    },
+      row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 5,
+      },
+      column: {
+        flex: 1,
+        marginLeft: 10,
+      },
+      icon: {
+        marginRight: 5,
+      },
+      username: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+      },
+      orderStatus: {
+        marginLeft: 'auto',
+        fontSize: 14,
+        color: '#007BFF',
+      },
+      details: {
+        fontSize: 14,
+        color: '#555',
+        flex: 1,
+      },
+      quantity: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#555',
+      },
+      orderDate: {
+        fontSize: 14,
+        color: '#999',
+        marginTop: 5,
+      },
+      orderTotal: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#2ecc71',
+        textAlign: 'right',
+        marginTop: 10,
+      },
+      productImage: {
+        width: 60,
+        height: 60,
+        borderRadius: 10,
+      },
+
 });
 
 export default PurchaseOrder;

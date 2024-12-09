@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { useUser } from '../../context/UserContext';
 import { API_URL } from '@env';
-import { AirbnbRating } from 'react-native-ratings';
+import { Ionicons } from '@expo/vector-icons';
 
 const ProductDetail = ({ route }) => {
     const { product } = route.params;
@@ -14,7 +14,8 @@ const ProductDetail = ({ route }) => {
     const [selectedColor, setSelectedColor] = useState(null);
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');
-    const [rating, setRating] = useState(0);
+    const [rating, setRating] = useState(0); 
+    const [hoveredStar, setHoveredStar] = useState(0); 
 
     const [refreshComments, setRefreshComments] = useState(false);  // State to refresh comments
 
@@ -132,6 +133,32 @@ const ProductDetail = ({ route }) => {
         }
     };
 
+    //Rating
+    const handleRating = (star) => {
+        setRating(star);
+      };
+    
+      const renderStars = () => {
+        const stars = [];
+        for (let i = 1; i <= 5; i++) {
+          stars.push(
+            <TouchableOpacity
+              key={i}
+              onPress={() => handleRating(i)} // Cập nhật rating khi chọn sao
+              onPressIn={() => setHoveredStar(i)} // Hiển thị sao khi hover
+              onPressOut={() => setHoveredStar(0)} // Ẩn sao khi không hover
+            >
+              <Ionicons
+                name={i <= (hoveredStar || rating) ? 'star' : 'star-outline'}
+                size={30}
+                color={i <= (hoveredStar || rating) ? '#FFD700' : '#ccc'}
+              />
+            </TouchableOpacity>
+          );
+        }
+        return stars;
+      };
+
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
@@ -183,13 +210,9 @@ const ProductDetail = ({ route }) => {
                 {/* Rating Section */}
                 <View style={styles.ratingContainer}>
                     <Text style={styles.ratingTitle}>Đánh giá:</Text>
-                    <AirbnbRating
-                        count={5}
-                        defaultRating={rating}
-                        size={30}
-                        onFinishRating={setRating}
-                        showRating={false}
-                    />
+                    <View style={styles.starsContainer}>
+                        {renderStars()}
+                    </View>
                     {rating === 0 && <Text style={styles.warningText}>Vui lòng chọn đánh giá</Text>}
                 </View>
 
@@ -269,9 +292,6 @@ const styles = StyleSheet.create({
     optionTextSelected: { color: '#fff' },
     addToCartButton: { backgroundColor: '#FF9900', padding: 15, borderRadius: 8, alignItems: 'center', marginBottom: 20 },
     addToCartButtonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
-    ratingContainer: { marginBottom: 20 },
-    ratingTitle: { fontSize: 18, fontWeight: '600', marginBottom: 10, color: '#333' },
-    warningText: { color: 'red', fontSize: 14, marginTop: 5 },
     commentsContainer: { marginTop: 20 },
     commentsTitle: { fontSize: 20, fontWeight: '600', marginBottom: 10, color: '#333' },
     noCommentsText: { color: '#999', fontStyle: 'italic', marginBottom: 10 },
@@ -317,6 +337,23 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#777',
     },
+
+    ratingContainer: {
+        marginTop: 20,
+        alignItems: 'center',
+      },
+      ratingTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+      },
+      starsContainer: {
+        flexDirection: 'row',
+      },
+      warningText: {
+        color: 'red',
+        marginTop: 10,
+      },
 });
 
 export default ProductDetail;

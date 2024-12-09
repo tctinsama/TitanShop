@@ -67,11 +67,14 @@ const NewsScreen = () => {
             <View style={styles.innerContainer}>
                 {/* Header của HomeScreen */}
                 <View style={styles.headerTitleContainer}>
+                    
+                    <TouchableOpacity style={styles.menuButton} onPress={() => navigation.navigate('Home')}>
                     <Image
                         style={styles.headerLogo}
                         source={require("../../../assets/images/logo-removebg-preview.png")}
                         resizeMode={"contain"}
-                    />
+                    />                        
+                    </TouchableOpacity>
                     <Text style={styles.headerTitle}>Fashion News</Text>
                 </View>
 

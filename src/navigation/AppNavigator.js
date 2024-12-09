@@ -15,7 +15,8 @@ import ShopManagement from '../screens/client/ShopManagement';
 import ShopDetail from '../screens/client/ShopDetail';
 import AddProduct from '../screens/client/AddProduct';
 import OrderHistory from '../screens/client/OrderHistory';
-import NewsScreenDetail from '../screens/customer/NewsDetailScreen'; // Import màn hình mới
+import NewsScreenDetail from '../screens/customer/NewsDetailScreen'; 
+import NewsScreen from '../screens/customer/NewsScreen'; 
 import ChatScreen from '../screens/customer/ChatScreen'; // Import màn hình mới
 import PurchaseOrder from '../screens/customer/PurchaseOrder';
 
@@ -47,6 +48,7 @@ const AppNavigator = () => {
       <Stack.Screen name="OrderHistory" component={OrderHistory} />
       <Stack.Screen name="PurchaseOrder" component={PurchaseOrder} />
       {/* Thêm màn hình NewsScreenDetail */}
+      <Stack.Screen name="NewsScreen" component={NewsScreen} options={{ title: 'Tin Tức' }} />
       <Stack.Screen name="NewsScreenDetail" component={NewsScreenDetail} options={{ title: 'Chi Tiết Tin Tức' }} />
       <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ title: 'Chat với trợ lí AI' }} />
 

@@ -3,6 +3,8 @@ import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, TextInput,
 import { useUser } from '../../context/UserContext';
 import { API_URL } from '@env';
 import { Ionicons } from '@expo/vector-icons';
+import ShopInfo from '../../components/ShopInfo';
+import ShopProducts from './ShopProducts';
 
 const ProductDetail = ({ route }) => {
     const { product } = route.params;
@@ -250,27 +252,7 @@ const ProductDetail = ({ route }) => {
 
 
             {/* Shop Info Section */}
-            <View style={styles.shopInfoContainer}>
-                <TouchableOpacity
-                    style={styles.shopCard}
-                    onPress={() => {
-                        Alert.alert('Thông báo', 'Điều hướng đến trang shop');
-                        // Điều hướng đến trang danh sách sản phẩm của shop (cần kết hợp Navigation)
-                    }}
-                >
-                    <Image
-                        source={require('../../../assets/images/carousel_1.png')} 
-                        style={styles.shopImage}
-                        resizeMode="cover"
-                    />
-                    <View style={styles.shopDetails}>
-                        <Text style={styles.shopName}>Shop không xác định</Text>
-                        <Text style={styles.shopDescription}>
-                            Chưa có thông tin chi tiết về shop này. Nhấn vào để tìm hiểu thêm.
-                        </Text>
-                    </View>
-                </TouchableOpacity>
-            </View>
+            <ShopInfo userId={userId} navigation={ShopProducts} />
 
         </ScrollView>
     );

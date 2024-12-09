@@ -5,6 +5,7 @@ import Login from '../screens/Login';
 import Register from '../screens/Register';
 import ForgotPassword from '../screens/ForgotPassword';
 import MyTabs from '../components/MyTabs';
+import ShopInfo from '../components/ShopInfo';
 import ProductDetail from '../screens/customer/ProductDetail';
 import CartScreen from '../screens/customer/CartScreen';
 import CheckoutScreen from '../screens/customer/CheckoutScreen';
@@ -19,6 +20,8 @@ import NewsScreenDetail from '../screens/customer/NewsDetailScreen';
 import NewsScreen from '../screens/customer/NewsScreen'; 
 import ChatScreen from '../screens/customer/ChatScreen'; // Import màn hình mới
 import PurchaseOrder from '../screens/customer/PurchaseOrder';
+import ShopProducts from '../screens/customer/ShopProducts';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -47,6 +50,8 @@ const AppNavigator = () => {
       <Stack.Screen name="AddProduct" component={AddProduct} />
       <Stack.Screen name="OrderHistory" component={OrderHistory} />
       <Stack.Screen name="PurchaseOrder" component={PurchaseOrder} />
+      <Stack.Screen name="ShopInfo" component={ShopInfo} />
+      <Stack.Screen name="ShopProducts" component={ShopProducts} />
       {/* Thêm màn hình NewsScreenDetail */}
       <Stack.Screen name="NewsScreen" component={NewsScreen} options={{ title: 'Tin Tức' }} />
       <Stack.Screen name="NewsScreenDetail" component={NewsScreenDetail} options={{ title: 'Chi Tiết Tin Tức' }} />

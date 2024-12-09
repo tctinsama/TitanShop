@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 import axios from 'axios';
-import ShopProductItem from './ShopProductItem';
+import ShopProductItem from '../../components/ShopProductItem'; // Đảm bảo bạn import đúng ShopProductItem
 import { API_URL } from '@env';
 
-const ShopProductList = ({ userId }) => {
+const ShopProducts = ({ route }) => {
+    const { userId } = route.params; // Lấy userId từ params truyền vào
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -14,8 +15,6 @@ const ShopProductList = ({ userId }) => {
             try {
                 const response = await axios.get(`${API_URL}/api/shop/products?userId=${userId}`);
                 
-                // Debug log để kiểm tra response
-                // console.log('Fetched products:', response.data);
 
                 if (Array.isArray(response.data)) {
                     const filteredProducts = response.data.map(product => {
@@ -119,4 +118,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default ShopProductList;
+export default ShopProducts;

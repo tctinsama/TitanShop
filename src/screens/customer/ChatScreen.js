@@ -28,7 +28,7 @@ const ChatScreen = () => {
     setLoading(true);
   
     try {
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=AIzaSyCGouHk882AVluelZTb7RtDboI6sjOkeOs', {
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=AIzaSyAOkmBHmAIct3lwJ2plLvVTtfec5oa08zE', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

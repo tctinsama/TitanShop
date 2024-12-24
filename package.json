@@ -29,7 +29,7 @@
     "dotenv": "^16.4.5",
     "expo": "^52.0.9",
     "expo-image": "^1.13.0",
-    "expo-image-picker": "~15.0.7",
+    "expo-image-picker": "~16.0.3",
     "expo-status-bar": "~1.12.1",
     "express": "^4.21.1",
     "moment": "^2.30.1",

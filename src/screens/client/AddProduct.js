@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import { Picker } from '@react-native-picker/picker';
 import { API_URL } from '@env';
-import { useUser } from '../../context/UserContext';  // Đảm bảo bạn đã tạo context và cung cấp userId
+import { useUser } from '../../context/UserContext';
 
 const AddProduct = () => {
   const [productData, setProductData] = useState({
@@ -17,7 +17,7 @@ const AddProduct = () => {
   const [categories, setCategories] = useState([]);
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { userId } = useUser();  // Đảm bảo rằng userId được cung cấp từ context
+  const { userId } = useUser();
 
   useEffect(() => {
     fetchCategories();
@@ -26,16 +26,20 @@ const AddProduct = () => {
   const fetchCategories = async () => {
     try {
       const response = await fetch(`${API_URL}/categories`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch categories');
+      }
       const data = await response.json();
-      setCategories(data);
+      setCategories(data || []);
     } catch (error) {
       console.error('Error loading categories:', error);
+      Alert.alert('Error', 'Could not load categories. Please try again.');
     }
   };
 
   const handleImageUpload = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
       Alert.alert('Permission Denied', 'You need to allow access to the media library to upload images.');
       return;
     }
@@ -46,105 +50,106 @@ const AddProduct = () => {
       quality: 1,
     });
 
-    if (result && !result.canceled && result.assets && result.assets.length > 0) {
+    if (!result.canceled) {
       const fileUri = result.assets[0].uri;
-
       try {
         const imageUrl = await uploadImageToCloudinary(fileUri);
         setProductData((prevData) => ({ ...prevData, image: imageUrl }));
       } catch (error) {
-        console.error("Error uploading image to Cloudinary:", error);
+        console.error('Error uploading image to Cloudinary:', error);
         Alert.alert('Error', 'There was an error uploading the image.');
       }
     }
   };
 
   const uploadImageToCloudinary = async (fileUri) => {
-    const CLOUD_NAME = 'do0k0jkej';
-    const UPLOAD_PRESET = 'cloudtinsama';
-
     const data = new FormData();
     data.append('file', {
       uri: fileUri,
       type: 'image/jpeg',
-      name: 'uploaded_image.jpg',
+      name: fileUri.split('/').pop(),
     });
-    data.append('upload_preset', UPLOAD_PRESET);
+    data.append('upload_preset', 'cloudtinsama');
 
-    const response = await axios.post(
-      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-      data,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
-    );
-    return response.data.secure_url;
+    try {
+      const response = await axios.post(
+        'https://api.cloudinary.com/v1_1/do0k0jkej/image/upload',
+        data,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      return response.data.secure_url;
+    } catch (error) {
+      console.error('Error uploading image to Cloudinary:', error.response || error);
+      throw new Error('Error uploading image to Cloudinary');
+    }
   };
 
   const handleSaveProduct = async () => {
     if (!productData.name || !productData.description || !productData.price || !productData.category || !productData.image) {
-        Alert.alert('Error', 'Please fill all fields and select an image.');
-        return;
+      Alert.alert('Error', 'Please fill all fields and select an image.');
+      return;
     }
 
     if (!userId) {
-        Alert.alert('Error', 'User ID is required.');
-        return;
+      Alert.alert('Error', 'User ID is required.');
+      return;
     }
 
     setLoading(true);
 
     const price = parseFloat(productData.price);
     if (isNaN(price) || price <= 0) {
-        Alert.alert('Error', 'Please enter a valid price.');
-        setLoading(false);
-        return;
+      Alert.alert('Error', 'Please enter a valid price.');
+      setLoading(false);
+      return;
     }
 
     const formData = new FormData();
     formData.append('name', productData.name);
     formData.append('description', productData.description);
-    formData.append('price', productData.price);
+    formData.append('price', price.toString());
     formData.append('category', productData.category);
     formData.append('image', {
-        uri: productData.image,
-        type: 'image/jpeg',
-        name: 'uploaded_image.jpg',
+      uri: productData.image,
+      type: 'image/jpeg',
+      name: 'uploaded_image.jpg',
     });
     formData.append('userId', userId);
 
     try {
-        const response = await fetch(`${API_URL}/api/products`, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
+      const response = await fetch(`${API_URL}/api/products`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Error response from API:', errorText);
-            Alert.alert('Error', errorText);
-            return;
-        }
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response from API:', errorText);
+        Alert.alert('Error', errorText);
+        return;
+      }
 
-        const jsonResponse = await response.json();
-        Alert.alert('Success', 'Product saved successfully!');
-        setProductData({
-            name: '',
-            description: '',
-            price: '',
-            category: '',
-            image: null,
-        });
+      const jsonResponse = await response.json();
+      Alert.alert('Success', 'Product saved successfully!');
+      setProductData({
+        name: '',
+        description: '',
+        price: '',
+        category: '',
+        image: null,
+      });
     } catch (error) {
-        console.error('Error saving product:', error);
-        Alert.alert('Error', 'There was an error saving the product.');
+      console.error('Error saving product:', error);
+      Alert.alert('Error', 'There was an error saving the product.');
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
 
-  
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Add Product</Text>
@@ -182,19 +187,23 @@ const AddProduct = () => {
         </Text>
       </TouchableOpacity>
       {showPicker && (
-        <Picker
-          selectedValue={productData.category}
-          onValueChange={(value) => {
-            setProductData((prev) => ({ ...prev, category: value }));
-            setShowPicker(false);
-          }}
-          style={styles.picker}
-        >
-          <Picker.Item label="Select Category" value="" />
-          {categories.map((category) => (
-            <Picker.Item key={category.categoryproductid} label={category.categoryname} value={category.categoryproductid} />
-          ))}
-        </Picker>
+        categories.length > 0 ? (
+          <Picker
+            selectedValue={productData.category}
+            onValueChange={(value) => {
+              setProductData((prev) => ({ ...prev, category: value }));
+              setShowPicker(false);
+            }}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select Category" value="" />
+            {categories.map((category) => (
+              <Picker.Item key={category.categoryproductid} label={category.categoryname} value={category.categoryproductid} />
+            ))}
+          </Picker>
+        ) : (
+          <Text style={{ color: 'red' }}>No categories available.</Text>
+        )
       )}
 
       <Text style={styles.label}>Image</Text>
@@ -209,6 +218,7 @@ const AddProduct = () => {
     </ScrollView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: { flexGrow: 1, padding: 20, backgroundColor: '#f5f5f5', alignItems: 'center' },

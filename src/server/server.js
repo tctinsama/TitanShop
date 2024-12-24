@@ -906,7 +906,7 @@ app.get('/api/shop/products', (req, res) => {
     }
 
     const query = `SELECT * FROM product WHERE userid = ? AND status = 1`;
-    console.log('Executing query:', query, 'with userId:', userId); // Log truy vấn SQL
+    // console.log('Executing query:', query, 'with userId:', userId); // Log truy vấn SQL
 
     connection.query(query, [userId], (error, results) => {
         if (error) {
@@ -914,30 +914,30 @@ app.get('/api/shop/products', (req, res) => {
             return res.status(500).json({ error: 'An error occurred while fetching products' });
         }
 
-        console.log('Fetched results:', results); // Log dữ liệu trả về từ cơ sở dữ liệu
+        // console.log('Fetched results:', results); // Log dữ liệu trả về từ cơ sở dữ liệu
 
         // Xử lý hình ảnh cho từng sản phẩm
         const cleanedResults = results.map(product => {
             let imageUrl = null;
-            console.log('Processing product:', product.name); // Log từng sản phẩm đang được xử lý
+            // console.log('Processing product:', product.name); // Log từng sản phẩm đang được xử lý
 
             if (product.image) {
                 const imageString = product.image.toString('utf-8');
-                console.log('Product image (Buffer to String):', imageString); // Log ảnh dưới dạng string
+                // console.log('Product image (Buffer to String):', imageString); // Log ảnh dưới dạng string
 
                 // Kiểm tra nếu ảnh là URL hợp lệ
                 if (imageString.startsWith('http://') || imageString.startsWith('https://')) {
                     imageUrl = imageString; // Nếu là URL hợp lệ
-                    console.log('Valid image URL found:', imageUrl); // Log URL hợp lệ
+                    // console.log('Valid image URL found:', imageUrl); // Log URL hợp lệ
                 } else {
                     // Nếu không phải URL, chuyển Buffer thành chuỗi Base64
                     imageUrl = `data:image/jpeg;base64,${Buffer.from(product.image).toString('base64')}`;
-                    console.log('Converted image to Base64:', imageUrl); // Log ảnh đã chuyển thành Base64
+                    // console.log('Converted image to Base64:', imageUrl); // Log ảnh đã chuyển thành Base64
                 }
             } else {
                 // Nếu không có ảnh, sử dụng ảnh mặc định
                 imageUrl = 'https://example.com/default-image.png';
-                console.log('No image provided, using default image:', imageUrl); // Log khi không có ảnh
+                // console.log('No image provided, using default image:', imageUrl); // Log khi không có ảnh
             }
 
             return {
@@ -946,7 +946,7 @@ app.get('/api/shop/products', (req, res) => {
             };
         });
 
-        console.log('Final cleaned results:', cleanedResults); // Log kết quả đã xử lý
+        // console.log('Final cleaned results:', cleanedResults); // Log kết quả đã xử lý
 
         res.json(cleanedResults); // Trả về danh sách sản phẩm đã xử lý
     });

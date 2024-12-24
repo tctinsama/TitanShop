@@ -170,7 +170,7 @@ const CheckoutScreen = () => {
                 <Text style={styles.totalText}>Tổng thanh toán: <Text style={styles.amount}>{formatCurrency(totalAfterDiscount + shippingFee)}</Text></Text>
             </View>
 
-            <TouchableOpacity style={styles.button} onPress={handlePayment}>
+            <TouchableOpacity style={styles.buttoncheckout} onPress={handlePayment}>
                 <Text style={styles.buttonText}>Thanh toán</Text>
             </TouchableOpacity>
         </ScrollView>
@@ -203,8 +203,13 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         marginVertical: 10,
     },
+    buttoncheckout: {
+        backgroundColor: '#11d157',
+        padding: 15,
+        borderRadius: 5,
+        marginVertical: 10,
+    },
     buttonText: {
-        color: '#fff',
         textAlign: 'center',
         fontSize: 18,
     },

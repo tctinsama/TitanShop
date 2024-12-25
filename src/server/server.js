@@ -1020,6 +1020,7 @@ app.get('/api/shop/orders/status', (req, res) => {
     });
 });
 
+//src/server/server.js
 // API cập nhật trạng thái đơn hàng
 app.put('/api/shop/orders/confirm', (req, res) => {
   const { orderCode, newStatus } = req.body;
@@ -1051,6 +1052,21 @@ app.put('/api/shop/orders/confirm', (req, res) => {
     res.status(200).json({ message: 'Order status updated successfully' });
   });
 });
+
+// API trả về danh sách vouchers của người dùng
+app.get('/api/shop/vouchers/:userId', (req, res) => {
+  const { userId } = req.params;
+  const query = 'SELECT * FROM vouchers WHERE user_id = ? AND status = 1'; // Lọc voucher của người dùng
+  connection.query(query, [userId], (error, results) => {
+    if (error) {
+      console.error('Error fetching vouchers:', error);
+      return res.status(500).json({ error: 'Error fetching vouchers' });
+    }
+    res.status(200).json(results);
+  });
+});
+
+
 
 
 // POST /api/comments/add

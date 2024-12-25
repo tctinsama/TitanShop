@@ -134,7 +134,8 @@ const CartScreen = () => {
                         {/* Chi tiết sản phẩm */}
                         <View style={styles.productDetails}>
                             <Text style={styles.productName}>{item.name}</Text>
-                            <Text style={styles.productPrice}>${(item.price || 0).toFixed(2)}</Text>
+                            <Text style={styles.productPrice}>đ{(item.price || 0).toLocaleString('vi-VN')}</Text>
+
 
                             {/* Thuộc tính của sản phẩm */}
                             <View style={styles.cartItemAttributes}>

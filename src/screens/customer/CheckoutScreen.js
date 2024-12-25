@@ -167,7 +167,14 @@ const CheckoutScreen = () => {
                 <Text style={styles.totalText}>Tổng tiền: <Text style={styles.amount}>{formatCurrency(totalAmount)}</Text></Text>
                 <Text style={styles.totalText}>Giảm giá: <Text style={styles.amount}>-{formatCurrency(discount)}</Text></Text>
                 <Text style={styles.totalText}>Phí vận chuyển: <Text style={styles.amount}>{formatCurrency(shippingFee)}</Text></Text>
-                <Text style={styles.totalText}>Tổng thanh toán: <Text style={styles.amount}>{formatCurrency(totalAfterDiscount + shippingFee)}</Text></Text>
+                <Text style={styles.totalText}>
+                    Tổng thanh toán:
+                    <Text style={styles.amount}>
+                        {formatCurrency(
+                            (discount > 0 ? totalAfterDiscount : totalAmount) + shippingFee
+                        )}
+                    </Text>
+                </Text>
             </View>
 
             <TouchableOpacity style={styles.buttoncheckout} onPress={handlePayment}>

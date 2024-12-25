@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import ShopProductList from '../../components/ShopProductList';
 import { useUser } from '../../context/UserContext';
 import { useNavigation } from '@react-navigation/native';
+import VoucherManagement from './VoucherManagement';
 
 const options = [
   { id: '1', title: 'Xem sản phẩm' },
@@ -65,9 +66,7 @@ const ShopDetail = () => {
           </View>
         )}
         {selectedOption === 'vouchers' && (
-          <View style={styles.placeholder}>
-            <Text style={styles.placeholderText}>Quản lý Voucher (Tính năng sắp ra mắt)</Text>
-          </View>
+          <VoucherManagement userId={userId} />
         )}
         {selectedOption === 'shopmanagement' && (
           <View style={styles.placeholder}>

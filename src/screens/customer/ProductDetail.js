@@ -166,7 +166,7 @@ const ProductDetail = ({ route }) => {
             <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
             <View style={styles.detailsContainer}>
                 <Text style={styles.productName}>{product.name}</Text>
-                <Text style={styles.productPrice}>${product.price}</Text>
+                <Text style={styles.productPrice}>đ{product.price.toLocaleString('vi-VN')}</Text>
                 <Text style={styles.productDescription}>{product.productdes}</Text>
 
                 {/* Size Selection */}

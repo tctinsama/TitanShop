@@ -26,7 +26,7 @@ const ProductItem = ({ product, style }) => {
                 />
             </View>
             <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
-            <Text style={styles.productPrice}>đ{product.price}</Text>
+            <Text style={styles.productPrice}>đ{product.price.toLocaleString('vi-VN')}</Text>
         </TouchableOpacity>
     );
 };
